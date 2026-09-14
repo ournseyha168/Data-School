@@ -28,7 +28,8 @@ const supabaseRequest = async (path, options = {}) => {
         headers: { apikey: supabaseSecretKey, Authorization: 'Bearer ' + supabaseSecretKey, 'Content-Type': 'application/json', ...(options.headers || {}) }
     });
     if (!response.ok) throw new Error(`Supabase request failed (${response.status}): ${await response.text()}`);
-    return response.status === 204 ? null : response.json();
+    const body = await response.text();
+    return body ? JSON.parse(body) : null;
 };
 
 const hashPassword = (password) => {
