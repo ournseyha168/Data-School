@@ -51,10 +51,23 @@ const findManagedAccount = async (username) => {
     return rows[0] || null;
 };
 const saveManagedAccount = async (username, password, role, createdBy) => {
+    if (await findManagedAccount(username)) {
+        const error = new Error('USERNAME_EXISTS');
+        error.code = 'USERNAME_EXISTS';
+        throw error;
+    }
     await supabaseRequest('managed_accounts?on_conflict=username', {
         method: 'POST',
         headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
         body: JSON.stringify({ username, password_hash: hashPassword(password), role, created_by: createdBy })
+    });
+};
+const resetManagedAccountPassword = async (username, password) => {
+    const encodedUsername = encodeURIComponent(username);
+    await supabaseRequest(`managed_accounts?username=eq.${encodedUsername}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ password_hash: hashPassword(password) })
     });
 };
 const verifyOwnerPassword = (username, password) => username === ownerUsername && password === ownerPassword;
@@ -91,6 +104,7 @@ app.post('/api/managed-user-credentials', async (request, response) => {
         await saveManagedAccount(username, password, 'user', creatorRole);
         response.json({ ok: true });
     } catch (error) {
+        if (error.code === 'USERNAME_EXISTS') return response.status(409).json({ error: 'Username នេះមានរួចហើយ។ សូមជ្រើស Username ផ្សេង។' });
         console.error('User account creation failed.', error);
         response.status(503).json({ error: 'Account storage is unavailable. Please try again later.' });
     }
@@ -106,7 +120,35 @@ app.post('/api/owner/admin-credentials', async (request, response) => {
         await saveManagedAccount(username, password, 'admin', 'owner');
         response.json({ ok: true });
     } catch (error) {
+        if (error.code === 'USERNAME_EXISTS') return response.status(409).json({ error: 'Username នេះមានរួចហើយ។ សូមជ្រើស Username ផ្សេង។' });
         console.error('Admin account creation failed.', error);
+        response.status(503).json({ error: 'Account storage is unavailable. Please try again later.' });
+    }
+});
+
+app.post('/api/reset-managed-password', async (request, response) => {
+    const { creatorRole, creatorUsername, creatorPassword, targetUsername } = request.body || {};
+    const target = normalizeUsername(targetUsername);
+    const newPassword = String(request.body?.newPassword || '');
+    if (!target || newPassword.length < 8) {
+        response.status(400).json({ error: 'Username និង password ថ្មីយ៉ាងតិច 8 តួអក្សរត្រូវបានទាមទារ។' });
+        return;
+    }
+    try {
+        const account = await findManagedAccount(target);
+        if (!account) return response.status(404).json({ error: 'រកមិនឃើញ account នេះទេ។' });
+        const creatorAuthorized = creatorRole === 'owner'
+            ? creatorPassword === ownerPassword
+            : creatorRole === 'admin' && await verifyAdminPassword(normalizeUsername(creatorUsername), creatorPassword);
+        const allowedTarget = creatorRole === 'owner' || (creatorRole === 'admin' && account.role === 'user');
+        if (!creatorAuthorized || !allowedTarget) {
+            response.status(403).json({ error: 'សិទ្ធិរបស់អ្នកមិនអាច reset account នេះបានទេ។' });
+            return;
+        }
+        await resetManagedAccountPassword(target, newPassword);
+        response.json({ ok: true });
+    } catch (error) {
+        console.error('Managed password reset failed.', error);
         response.status(503).json({ error: 'Account storage is unavailable. Please try again later.' });
     }
 });
