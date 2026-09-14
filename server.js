@@ -76,6 +76,18 @@ const verifyAdminPassword = async (username, password) => {
     return account?.role === 'admin' && verifyPassword(password, account.password_hash);
 };
 
+app.post('/api/managed-accounts-list', async (request, response) => {
+    const suppliedOwnerPassword = String(request.body?.ownerPassword || '');
+    if (suppliedOwnerPassword !== ownerPassword) return response.status(401).json({ error: 'Owner authentication failed.' });
+    try {
+        const accounts = await supabaseRequest('managed_accounts?select=username,role&order=username.asc');
+        response.json({ accounts });
+    } catch (error) {
+        console.error('Managed account list failed.', error);
+        response.status(503).json({ error: 'Account storage is unavailable. Please try again later.' });
+    }
+});
+
 app.post('/api/role-login', async (request, response) => {
     const username = normalizeUsername(request.body?.username);
     const password = String(request.body?.password || '');

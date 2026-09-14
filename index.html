@@ -42,7 +42,6 @@
                 radial-gradient(circle at 12% 16%, rgba(103,216,232,.12), transparent 16%),
                 radial-gradient(circle at 82% 28%, rgba(145,169,255,.11), transparent 14%),
                 radial-gradient(circle at 58% 76%, rgba(197,155,255,.07), transparent 18%);
-            filter: blur(30px);
             animation: rgbDrift 24s ease-in-out infinite alternate;
         }
         body::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .08; background-image: linear-gradient(rgba(166,184,207,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(166,184,207,.04) 1px, transparent 1px); background-size: 32px 32px; mask-image: linear-gradient(to bottom, black, transparent 75%); }
@@ -428,25 +427,7 @@
         .owner-mode .owner-only.view:not(.active) { display: none !important; }
         .owner-mode .owner-only.view.active { display: block !important; }
         .teacher-mode #delete-class, .teacher-mode #add-student-to-class { display: none !important; }
-        .viewer-mode main .view form { display: none !important; }
-        .viewer-mode main .view button { display: none !important; }
-        .viewer-mode #classes #show-class-form,
-        .viewer-mode #classes #show-class-student-form,
-        .viewer-mode #classes #add-student-to-class,
-        .viewer-mode #classes .remove-class-student,
-        .viewer-mode #classes #cancel-class,
-        .viewer-mode #classes #cancel-class-student,
-        .viewer-mode #classes #class-form button[type="submit"],
-        .viewer-mode #classes #class-add-student-form button[type="submit"] { display: inline-block !important; }
-        .viewer-mode #classes #class-form,
-        .viewer-mode #classes #class-add-student-form { display: grid !important; }
-        .viewer-mode #classes #class-form[hidden],
-        .viewer-mode #classes #class-add-student-form[hidden] { display: none !important; }
-        .viewer-mode #classes input,
-        .viewer-mode #classes select { filter: none; opacity: 1; pointer-events: auto; }
-        .viewer-mode main .view input[type="file"], .viewer-mode main .view select, .viewer-mode main .view textarea { pointer-events: none; opacity: .65; }
-        .viewer-mode main .table-wrap tbody td { filter: blur(6px); user-select: none; }
-        .viewer-mode main .table-wrap tbody td.empty, .viewer-mode main .table-wrap tbody td.module-empty { filter: none; }
+        .permission-hidden { display: none !important; }
         .viewer-mode .student-artboard, .viewer-mode .person-detail-card { filter: blur(7px); user-select: none; pointer-events: none; }
         .viewer-mode .toast { filter: none; }
         @media (max-width: 680px) { .dashboard-insights { grid-template-columns: 1fr; } }
@@ -697,6 +678,7 @@
                 <button class="admin-only" data-view="teacher-accounts"><span class="nav-icon">♙</span><span>បង្កើត Teacher</span></button>
                 <button class="admin-only" data-view="password-reset"><span class="nav-icon">↻</span><span>Reset password</span></button>
                 <button class="owner-only" data-view="owner-accounts"><span class="nav-icon">♙</span><span>បង្កើត Account</span></button>
+                <button class="owner-only" data-view="owner-permissions"><span class="nav-icon">⚙</span><span>កំណត់សិទ្ធិ</span></button>
             </nav>
             <div class="side-note">ទិន្នន័យនឹង sync ទៅ cloud នៅពេល server និង Supabase ត្រូវបានកំណត់ត្រឹមត្រូវ។</div>
         </aside>
@@ -784,13 +766,46 @@
         const isOwner = () => currentRole === 'owner';
         const isViewer = () => currentRole === 'user';
         const currentUsername = () => sessionStorage.getItem('seyha-username') || '';
-        const canManageClass = item => isAdmin() || (isViewer() && item?.ownerUsername === currentUsername());
-        const accessibleClasses = () => store.classes.filter(item => isAdmin() || item.ownerUsername === currentUsername());
-        const applyRole = () => { app.classList.toggle('teacher-mode', !isAdmin()); app.classList.toggle('viewer-mode', isViewer()); app.classList.toggle('owner-mode', isOwner()); document.getElementById('current-role').textContent = isOwner() ? 'Owner' : isAdmin() ? 'Admin' : isViewer() ? 'Teacher' : 'Teacher'; };
+        const permissionLabels = { dashboard: 'ទំព័រដើម', students: 'បញ្ជីសិស្ស', grades: 'តារាងពិន្ទុ', attendance: 'វត្តមាន', classes: 'ថ្នាក់រៀន', teachers: 'គ្រូបង្រៀន', schedule: 'កាលវិភាគ', fees: 'ថ្លៃសិក្សា', staff: 'បុគ្គលិក', announcements: 'សេចក្តីជូនដំណឹង', reports: 'របាយការណ៍', certificates: 'ប័ណ្ណសរសើរ', backup: 'បម្រុងទុក/ស្ដារ', 'teacher-accounts': 'បង្កើត Teacher', 'password-reset': 'Reset password' };
+        let userPermissions = JSON.parse(localStorage.getItem('seyha-permissions') || '{}');
+        const hasPermission = view => isOwner() || Array.isArray(userPermissions[currentUsername()]) && userPermissions[currentUsername()].includes(view);
+        const applyPermissions = () => {
+            document.querySelectorAll('.nav [data-view]').forEach(button => button.classList.toggle('permission-hidden', !hasPermission(button.dataset.view) && !button.classList.contains('owner-only')));
+            document.querySelectorAll('main .view[id]').forEach(view => view.classList.toggle('permission-hidden', !hasPermission(view.id) && !view.classList.contains('owner-only')));
+        };
+        const canManageClass = item => isOwner() || (isAdmin() && hasPermission('classes')) || (isViewer() && hasPermission('classes') && item?.ownerUsername === currentUsername());
+        const accessibleClasses = () => store.classes.filter(item => isOwner() || (isAdmin() && hasPermission('classes')) || (isViewer() && hasPermission('classes') && item.ownerUsername === currentUsername()));
+        const accessibleStudentIds = () => new Set(accessibleClasses().flatMap(item => Array.isArray(item.studentIds) ? item.studentIds : []));
+        const accessibleStudents = () => isAdmin() ? store.students : store.students.filter(student => accessibleStudentIds().has(student.id));
+        const applyRole = () => { app.classList.toggle('teacher-mode', isViewer()); app.classList.toggle('viewer-mode', false); app.classList.toggle('owner-mode', isOwner()); document.getElementById('current-role').textContent = isOwner() ? 'Owner' : isAdmin() ? 'Admin' : isViewer() ? 'Teacher' : 'Teacher'; applyPermissions(); };
         const renderOwnerSettings = () => { if (!isOwner() || document.getElementById('owner-accounts')) return; const section = document.createElement('section'); section.className = 'view owner-only'; section.id = 'owner-accounts'; section.innerHTML = '<div class="layout"><div class="panel"><div class="panel-head"><div><h2>បង្កើត Admin account</h2><small>Owner តែម្នាក់អាចកំណត់ Username និង Password សម្រាប់ Admin</small></div></div><form class="login-form" id="owner-admin-form"><label>Admin username<input name="username" required autocomplete="off"></label><label class="password-field">Admin password<input name="password" type="password" required minlength="8" autocomplete="new-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><label class="password-field">បញ្ជាក់ Owner password<input name="ownerPassword" type="password" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><p class="login-error" id="owner-admin-error" aria-live="polite"></p><button class="btn" type="submit">បង្កើត Admin account</button></form></div><div class="panel"><div class="panel-head"><div><h2>បង្កើត Teacher account</h2><small>Owner អាចបង្កើត Username និង Password សម្រាប់ Teacher</small></div></div><form class="login-form" id="owner-user-form"><label>Teacher username<input name="username" required autocomplete="off"></label><label class="password-field">Teacher password<input name="password" type="password" required minlength="8" autocomplete="new-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><label class="password-field">បញ្ជាក់ Owner password<input name="creatorPassword" type="password" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><p class="login-error" id="owner-user-error" aria-live="polite"></p><button class="btn" type="submit">បង្កើត Teacher account</button></form></div></div>'; document.querySelector('main').append(section); section.querySelector('#owner-admin-form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#owner-admin-error'); error.textContent = ''; const response = await fetch('/api/owner/admin-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានបង្កើត Admin account រួចរាល់។ អាច login ជា Admin បាន។' : (result.error || 'មិនអាចបង្កើតបានទេ។'); if (response.ok) event.currentTarget.reset(); }); section.querySelector('#owner-user-form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#owner-user-error'); error.textContent = ''; const payload = Object.fromEntries(new FormData(event.currentTarget)); payload.creatorRole = 'owner'; const response = await fetch('/api/managed-user-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានបង្កើត Teacher account រួចរាល់។ អាច login ជា Teacher បាន។' : (result.error || 'មិនអាចបង្កើតបានទេ។'); if (response.ok) event.currentTarget.reset(); }); };
+        const renderOwnerPermissions = () => {
+            if (!isOwner() || document.getElementById('owner-permissions')) return;
+            const section = document.createElement('section');
+            section.className = 'view owner-only';
+            section.id = 'owner-permissions';
+            section.innerHTML = '<div class="panel"><div class="panel-head"><div><h2>កំណត់សិទ្ធិអ្នកប្រើ</h2><small>បើ Owner មិនធីកសិទ្ធិ អ្នកប្រើនឹងមិនឃើញ menu និងមិនអាចប្រើផ្នែកនោះបានទេ។</small></div><button class="btn ghost" id="load-permission-accounts" type="button">បង្ហាញឈ្មោះ Account</button></div><p class="login-error" id="permission-error" aria-live="polite"></p><div id="permission-accounts"></div></div>';
+            document.querySelector('main').append(section);
+            const accountList = section.querySelector('#permission-accounts');
+            const error = section.querySelector('#permission-error');
+            section.querySelector('#load-permission-accounts').addEventListener('click', async () => {
+                error.textContent = '';
+                const ownerPassword = window.prompt('បញ្ចូល Owner password ដើម្បីបង្ហាញ Account');
+                if (!ownerPassword) return;
+                const response = await fetch('/api/managed-accounts-list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ownerPassword }) });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) { error.textContent = result.error || 'មិនអាចទាញយក Account បានទេ។'; return; }
+                accountList.innerHTML = result.accounts.map(account => `<form class="panel permission-account" data-username="${esc(account.username)}"><h3>${esc(account.username)} <small>(${account.role === 'admin' ? 'Admin' : 'Teacher'})</small></h3><div class="form-grid">${Object.entries(permissionLabels).map(([key, label]) => `<label><input type="checkbox" name="${key}" value="${key}"> ${label}</label>`).join('')}</div><button class="btn" type="submit">រក្សាទុកសិទ្ធិ</button></form>`).join('') || '<p class="empty">មិនទាន់មាន Admin ឬ Teacher account ទេ។</p>';
+                accountList.querySelectorAll('.permission-account').forEach(form => {
+                    const username = form.dataset.username;
+                    (userPermissions[username] || []).forEach(key => { const input = form.elements[key]; if (input) input.checked = true; });
+                    form.addEventListener('submit', event => { event.preventDefault(); userPermissions[username] = Object.keys(permissionLabels).filter(key => form.elements[key]?.checked); localStorage.setItem('seyha-permissions', JSON.stringify(userPermissions)); syncRemoteStorage(); notify(`បានរក្សាទុកសិទ្ធិសម្រាប់ ${username}។`); });
+                });
+            });
+        };
         const renderManagedUserSettings = () => { if (!isAdmin() || isOwner() || document.getElementById('teacher-accounts')) return; const section = document.createElement('section'); section.className = 'view admin-only'; section.id = 'teacher-accounts'; section.innerHTML = '<div class="panel"><div class="panel-head"><div><h2>បង្កើត Teacher account</h2><small>Admin អាចបង្កើត Username និង Password សម្រាប់ Teacher ប៉ុណ្ណោះ</small></div></div><form class="login-form" id="managed-user-form"><label>Teacher username<input name="username" required autocomplete="off"></label><label class="password-field">Teacher password<input name="password" type="password" required minlength="8" autocomplete="new-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><label class="password-field">បញ្ជាក់ Admin password<input name="creatorPassword" type="password" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><p class="login-error" id="managed-user-error" aria-live="polite"></p><button class="btn" type="submit">បង្កើត Teacher account</button></form></div>'; document.querySelector('main').append(section); section.querySelector('form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#managed-user-error'); error.textContent = ''; const payload = Object.fromEntries(new FormData(event.currentTarget)); payload.creatorRole = currentRole; payload.creatorUsername = sessionStorage.getItem('seyha-username') || ''; const response = await fetch('/api/managed-user-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានបង្កើត Teacher account រួចរាល់។ អាច login ជា Teacher បាន។' : (result.error || 'មិនអាចបង្កើតបានទេ។'); if (response.ok) event.currentTarget.reset(); }); };
         const renderPasswordResetSettings = () => { if (!isAdmin() || document.getElementById('password-reset')) return; const section = document.createElement('section'); section.className = 'view admin-only'; section.id = 'password-reset'; const targetLabel = isOwner() ? 'Admin ឬ Teacher username' : 'Teacher username'; const creatorLabel = isOwner() ? 'Owner password' : 'Admin password'; section.innerHTML = `<div class="panel"><div class="panel-head"><div><h2>Reset password</h2><small>${isOwner() ? 'Owner អាចកំណត់ password ថ្មីឲ្យ Admin ឬ Teacher' : 'Admin អាចកំណត់ password ថ្មីឲ្យ Teacher'}</small></div></div><form class="login-form" id="password-reset-form"><label>${targetLabel}<input name="targetUsername" required autocomplete="off"></label><label class="password-field">Password ថ្មី<input name="newPassword" type="password" required minlength="8" autocomplete="new-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><label class="password-field">បញ្ជាក់ ${creatorLabel}<input name="creatorPassword" type="password" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><p class="login-error" id="password-reset-error" aria-live="polite"></p><button class="btn" type="submit">រក្សាទុក password ថ្មី</button></form></div>`; document.querySelector('main').append(section); section.querySelector('form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#password-reset-error'); error.textContent = ''; const payload = Object.fromEntries(new FormData(event.currentTarget)); payload.creatorRole = currentRole; payload.creatorUsername = sessionStorage.getItem('seyha-username') || ''; const response = await fetch('/api/reset-managed-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានកំណត់ password ថ្មីរួចរាល់។' : (result.error || 'មិនអាច reset password បានទេ។'); if (response.ok) event.currentTarget.reset(); }); };
-        const unlock = () => { loginScreen.style.display = 'none'; app.classList.remove('auth-hidden'); applyRole(); renderOwnerSettings(); renderManagedUserSettings(); renderPasswordResetSettings(); };
+        const unlock = () => { loginScreen.style.display = 'none'; app.classList.remove('auth-hidden'); applyRole(); renderOwnerSettings(); renderOwnerPermissions(); renderManagedUserSettings(); renderPasswordResetSettings(); };
         const switchAuthMode = mode => { document.querySelectorAll('.auth-tab').forEach(item => item.classList.toggle('active', item.dataset.authMode === mode)); document.getElementById('user-auth').hidden = mode !== 'user'; document.getElementById('admin-auth').hidden = mode !== 'admin'; document.getElementById('owner-auth').hidden = mode !== 'owner'; document.getElementById('auth-title').textContent = mode === 'admin' ? 'Admin access' : mode === 'owner' ? 'Owner access' : 'Welcome back'; document.getElementById('auth-subtitle').textContent = mode === 'user' ? 'Sign in to continue to your school workspace.' : 'Use your separate school staff credentials to continue.'; };
         const setLoginTheme = theme => { const isDark = theme === 'dark'; loginScreen.classList.toggle('theme-dark', isDark); loginScreen.classList.toggle('theme-light', !isDark); loginThemeToggle.textContent = isDark ? '☀ Light mode' : '☾ Dark mode'; loginThemeToggle.setAttribute('aria-pressed', String(isDark)); loginThemeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode'); localStorage.setItem('seyha-login-theme', isDark ? 'dark' : 'light'); };
         loginThemeToggle.addEventListener('click', () => setLoginTheme(loginScreen.classList.contains('theme-dark') ? 'light' : 'dark'));
@@ -1014,16 +1029,18 @@
         };
         function render() {
             store.students.forEach(student => { student.gender = normalizeGender(student.gender); });
-            document.getElementById('student-count').textContent = store.students.length;
-            document.getElementById('class-count').textContent = store.classes.length;
+            const visibleStudents = accessibleStudents();
+            const visibleClasses = accessibleClasses();
+            document.getElementById('student-count').textContent = visibleStudents.length;
+            document.getElementById('class-count').textContent = visibleClasses.length;
             renderDashboardInsights();
             const present = store.attendance.filter(item => /present|presented|មក|វត្តមាន/i.test(item.status || '')).length;
             document.getElementById('attendance-count').textContent = store.attendance.length ? Math.round(present / store.attendance.length * 100) + '%' : '0%';
-            const rows = store.students.slice().reverse();
-            document.getElementById('recent-students').innerHTML = rows.slice(0, 5).map((student, index) => `<tr><td>${student.photo ? `<img class="student-photo" src="${esc(student.photo)}" alt="រូបថតសិស្ស">` : '<span class="avatar">-</span>'}</td><td>${store.students.length - index}</td><td>${esc(student.name)}</td><td>${esc(student.latinName) || '-'}</td><td>${esc(student.gender)}</td><td>${esc(student.dob) || '-'}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">មិនទាន់មានទិន្នន័យសិស្ស</td></tr>';
-            document.getElementById('student-total').textContent = `${store.students.length} នាក់`;
+            const rows = visibleStudents.slice().reverse();
+            document.getElementById('recent-students').innerHTML = rows.slice(0, 5).map((student, index) => `<tr><td>${student.photo ? `<img class="student-photo" src="${esc(student.photo)}" alt="រូបថតសិស្ស">` : '<span class="avatar">-</span>'}</td><td>${visibleStudents.length - index}</td><td>${esc(student.name)}</td><td>${esc(student.latinName) || '-'}</td><td>${esc(student.gender)}</td><td>${esc(student.dob) || '-'}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">មិនទាន់មានទិន្នន័យសិស្ស</td></tr>';
+            document.getElementById('student-total').textContent = `${visibleStudents.length} នាក់`;
             const query = (document.getElementById('student-search')?.value || '').toLowerCase();
-            document.getElementById('student-table').innerHTML = store.students.map((student, index) => ({ student, index })).filter(item => `${item.student.name} ${item.student.latinName || ''}`.toLowerCase().includes(query)).map(item => `<tr><td>${item.student.photo ? `<img class="student-photo" src="${esc(item.student.photo)}" alt="រូបថតសិស្ស">` : '<span class="avatar">-</span>'}</td><td>${item.index + 1}</td><td>${esc(item.student.name)}</td><td>${esc(item.student.latinName) || '-'}</td><td>${esc(item.student.gender)}</td><td>${esc(item.student.dob) || '-'}</td><td><div class="student-actions"><button class="btn ghost show-student-artboard" data-id="${item.student.id}">មើលព័ត៌មានលំអិត</button><button class="btn ghost edit-student" data-id="${item.student.id}">កែប្រែ</button><button class="btn danger delete-student" data-id="${item.student.id}">លុប</button></div></td></tr>`).join('') || '<tr><td colspan="7" class="empty">មិនទាន់មានទិន្នន័យសិស្ស</td></tr>';
+            document.getElementById('student-table').innerHTML = visibleStudents.map((student, index) => ({ student, index })).filter(item => `${item.student.name} ${item.student.latinName || ''}`.toLowerCase().includes(query)).map(item => `<tr><td>${item.student.photo ? `<img class="student-photo" src="${esc(item.student.photo)}" alt="រូបថតសិស្ស">` : '<span class="avatar">-</span>'}</td><td>${item.index + 1}</td><td>${esc(item.student.name)}</td><td>${esc(item.student.latinName) || '-'}</td><td>${esc(item.student.gender)}</td><td>${esc(item.student.dob) || '-'}</td><td><div class="student-actions"><button class="btn ghost show-student-artboard" data-id="${item.student.id}">មើលព័ត៌មានលំអិត</button><button class="btn ghost edit-student" data-id="${item.student.id}">កែប្រែ</button><button class="btn danger delete-student" data-id="${item.student.id}">លុប</button></div></td></tr>`).join('') || '<tr><td colspan="7" class="empty">មិនទាន់មានទិន្នន័យសិស្ស</td></tr>';
             document.getElementById('teacher-name').value = settings.teacher;
             document.getElementById('report-month').value = settings.month;
             document.getElementById('school-name').value = settings.school;
@@ -1035,7 +1052,7 @@
             renderClasses();
             renderCertificate();
         }
-        function showView(id) { document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === id)); document.querySelectorAll('.nav button').forEach(button => button.classList.toggle('active', button.dataset.view === id)); const titles = { dashboard:'សួស្តី, អ្នកគ្រប់គ្រង', students:'បញ្ជីសិស្ស', grades:'តារាងពិន្ទុ', attendance:'វត្តមានសិស្ស', classes:'ថ្នាក់រៀននីមួយៗ', certificates:'ប័ណ្ណសរសើរ', 'teacher-accounts':'បង្កើត Teacher account', 'password-reset':'Reset password', 'owner-accounts':'បង្កើត Admin និង Teacher account' }; document.getElementById('page-title').textContent = titles[id]; }
+        function showView(id) { if (!hasPermission(id) && !isOwner()) { notify('Owner មិនទាន់ផ្តល់សិទ្ធិឲអ្នកប្រើផ្នែកនេះទេ។', 'error'); return; } document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === id)); document.querySelectorAll('.nav button').forEach(button => button.classList.toggle('active', button.dataset.view === id)); const titles = { dashboard:'សួស្តី, អ្នកគ្រប់គ្រង', students:'បញ្ជីសិស្ស', grades:'តារាងពិន្ទុ', attendance:'វត្តមានសិស្ស', classes:'ថ្នាក់រៀននីមួយៗ', certificates:'ប័ណ្ណសរសើរ', 'teacher-accounts':'បង្កើត Teacher account', 'password-reset':'Reset password', 'owner-accounts':'បង្កើត Admin និង Teacher account', 'owner-permissions':'កំណត់សិទ្ធិអ្នកប្រើ' }; document.getElementById('page-title').textContent = titles[id] || id; }
         const gradePanel = document.querySelector('#grades .panel');
         const excelRibbon = document.createElement('div');
         excelRibbon.className = 'excel-ribbon print-hide';
@@ -1074,11 +1091,11 @@
         document.querySelectorAll('[data-command]').forEach(command => command.addEventListener('click', () => { const action = command.dataset.command; const actions = { add:'add-grade-student', import:'import-grade-template', export:'export-grades', print:'print-grades' }; if (actions[action]) document.getElementById(actions[action]).click(); if (action === 'undo') undo(); if (action === 'redo') redo(); if (action === 'sort') { remember(); store.students.sort((a, b) => total(b.id) - total(a.id)); save(); } if (action === 'filter') { const rows = document.querySelectorAll('#grade-table tr'); rows.forEach(row => { const inputs = row.querySelectorAll('.score-input'); row.style.display = inputs.length && Array.from(inputs).some(input => input.value.trim() !== '') ? '' : 'none'; }); } }));
         document.querySelectorAll('.nav button').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
         document.querySelectorAll('[data-go]').forEach(button => button.addEventListener('click', () => showView(button.dataset.go)));
-        document.getElementById('show-class-form').addEventListener('click', () => { if (!isAdmin() && !isViewer()) { notify('សិទ្ធិរបស់អ្នកមិនអាចបង្កើតថ្នាក់បានទេ។', 'error'); return; } const form = document.getElementById('class-form'); form.reset(); form.hidden = false; form.elements.name.focus(); });
+        document.getElementById('show-class-form').addEventListener('click', () => { if (!hasPermission('classes') || (!isAdmin() && !isViewer())) { notify('Owner មិនទាន់ផ្តល់សិទ្ធិគ្រប់គ្រងថ្នាក់ឲអ្នកទេ។', 'error'); return; } const form = document.getElementById('class-form'); form.reset(); form.hidden = false; form.elements.name.focus(); });
         document.getElementById('cancel-class').addEventListener('click', () => { const form = document.getElementById('class-form'); form.reset(); form.hidden = true; });
         document.getElementById('class-form').addEventListener('submit', event => {
             event.preventDefault();
-            if (!isAdmin() && !isViewer()) { notify('សិទ្ធិរបស់អ្នកមិនអាចបង្កើតថ្នាក់បានទេ។', 'error'); return; }
+            if (!hasPermission('classes') || (!isAdmin() && !isViewer())) { notify('Owner មិនទាន់ផ្តល់សិទ្ធិគ្រប់គ្រងថ្នាក់ឲអ្នកទេ។', 'error'); return; }
             const name = new FormData(event.target).get('name').trim();
             if (!name) return;
             if (store.classes.some(item => normalizeComparison(item.name) === normalizeComparison(name))) { notify('ថ្នាក់ដែលមានឈ្មោះដូចនេះមានរួចហើយ។', 'error'); return; }
