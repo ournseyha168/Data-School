@@ -72,10 +72,10 @@
         .login-box {
             width: min(100%, 430px);
             padding: 34px;
-            border: 1px solid var(--line);
+            border: 1px solid rgba(103,216,232,.28);
             border-radius: 16px;
             background: linear-gradient(135deg, rgba(20,30,46,.95), rgba(15,24,37,.96));
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow), 0 0 28px rgba(103,216,232,.08), 0 0 70px rgba(145,169,255,.05);
             backdrop-filter: blur(18px);
         }
         .login-box .brand { margin: 0 0 30px; }
@@ -83,6 +83,17 @@
         .login-box .sub { margin-bottom: 24px; line-height: 1.7; }
         .login-form { display: grid; gap: 15px; }
         .login-form .btn { width: 100%; margin-top: 5px; padding: 12px; }
+        .auth-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 20px 0 14px; padding: 4px; border: 1px solid rgba(103,216,232,.16); border-radius: 12px; background: rgba(255,255,255,.04); }
+        .auth-switch button { border: 0; border-radius: 8px; padding: 10px; color: var(--muted); background: transparent; }
+        .auth-switch button.active { color: var(--ink); background: linear-gradient(135deg, rgba(103,216,232,.24), rgba(145,169,255,.18)); box-shadow: 0 0 16px rgba(103,216,232,.12); }
+        .auth-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 20px; padding: 4px; border: 1px solid rgba(103,216,232,.16); border-radius: 12px; background: rgba(255,255,255,.04); }
+        .auth-tab { min-width: 0; border: 0; border-radius: 8px; padding: 10px 6px; color: var(--muted); background: transparent; white-space: nowrap; }
+        .auth-tab.active { color: var(--ink); background: linear-gradient(135deg, rgba(103,216,232,.24), rgba(197,155,255,.18)); box-shadow: 0 0 16px rgba(103,216,232,.12); }
+        .auth-panel { animation: authPanelIn .18s ease-out; }
+        @keyframes authPanelIn { from { opacity: .65; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+        .google-btn { color: #13203a; background: #fff; }
+        .user-welcome { text-align: center; padding-top: 12px; }
+        .user-welcome h2 { margin-bottom: 8px; }
         .login-help { margin: 18px 0 0; padding: 11px 13px; color: var(--muted); border-radius: 10px; background: rgba(84,232,255,.06); font-size: 12px; line-height: 1.65; }
         .login-error { min-height: 18px; margin: 0; color: var(--danger); font-size: 12px; }
         .toast { position: fixed; right: 22px; bottom: 22px; z-index: 20; max-width: min(420px, calc(100vw - 44px)); padding: 12px 16px; color: var(--ink); border: 1px solid rgba(103,216,232,.35); border-radius: 11px; background: rgba(18,29,49,.96); box-shadow: var(--shadow); opacity: 0; pointer-events: none; transform: translateY(10px); transition: .2s ease; }
@@ -107,15 +118,8 @@
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-1px); }
         }
-        .rgb-ripple { position: fixed; z-index: 9999; width: 18px; height: 18px; border: 2px solid rgba(103,216,232,.9); border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%) scale(.25); animation: rgbRipple .7s ease-out forwards; box-shadow: 0 0 12px rgba(103,216,232,.7), 0 0 28px rgba(197,155,255,.45); }
-        @keyframes rgbRipple { 0% { opacity: .95; transform: translate(-50%, -50%) scale(.25); } 60% { opacity: .72; border-color: rgba(197,155,255,.9); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(7); } }
-        .rgb-lightning { position: fixed; z-index: 10000; width: var(--bolt-length, 76px); height: 4px; border-radius: 99px; pointer-events: none; opacity: 0; background: linear-gradient(90deg, #67d8e8, #91a9ff 48%, #f0b7ff); clip-path: polygon(0 38%, 22% 0, 34% 34%, 51% 6%, 63% 44%, 78% 16%, 100% 50%, 77% 55%, 62% 100%, 49% 61%, 31% 94%, 22% 59%, 0 65%); filter: drop-shadow(0 0 5px #67d8e8) drop-shadow(0 0 13px #c59bff); transform-origin: 0 50%; animation: lightningStrike .62s ease-out forwards; mix-blend-mode: screen; }
-        .rgb-flash { position: fixed; z-index: 9999; width: 30px; height: 30px; border-radius: 50%; pointer-events: none; background: #fff; box-shadow: 0 0 16px 8px #67d8e8, 0 0 36px 14px #c59bff; transform: translate(-50%, -50%) scale(.2); animation: flashBurst .42s ease-out forwards; mix-blend-mode: screen; }
-        @keyframes lightningStrike { 0% { opacity: 0; transform: rotate(var(--bolt-angle)) scaleX(.08); } 18% { opacity: 1; } 48% { opacity: .95; } 100% { opacity: 0; transform: rotate(var(--bolt-angle)) scaleX(1); } }
-        @keyframes flashBurst { 0% { opacity: .98; transform: translate(-50%, -50%) scale(.2); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(3.4); } }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-            .rgb-ripple, .rgb-lightning, .rgb-flash { display: none; }
         }
         .nav-label { margin: 0 12px 10px; color: #5e74a5; font-size: 11px; letter-spacing: .13em; text-transform: uppercase; }
         .nav { display: grid; gap: 7px; }
@@ -237,6 +241,55 @@
             0% { background-position: 0% 50%; filter: brightness(1); }
             50% { background-position: 100% 50%; filter: brightness(1.35); }
             100% { background-position: 0% 50%; filter: brightness(1); }
+        }
+        /* Auth refresh: calm, product-like entry screens while retaining the existing role flows. */
+        .login-screen { position: relative; overflow: hidden; padding: 32px; background: #edf2f8; color: #18243b; }
+        .login-screen::before { content: ''; position: absolute; width: 560px; height: 560px; left: -230px; top: -190px; border-radius: 50%; background: #dce7f5; opacity: .48; }
+        .login-box { position: relative; display: grid; grid-template-columns: minmax(290px, .86fr) minmax(390px, 1.14fr); width: min(1080px, 100%); min-height: 650px; padding: 0; overflow: hidden; border: 1px solid #d7e0eb; border-radius: 26px; background: #fbfcfe; box-shadow: 0 20px 55px rgba(35,57,97,.13); }
+        .auth-visual { display: flex; flex-direction: column; justify-content: space-between; padding: 46px; color: #fff; background: linear-gradient(145deg, #1d3d8f 0%, #2d6fbe 52%, #70bdd4 100%); }
+        .auth-visual .brand { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; animation: none; }
+        .auth-visual .brand::before, .auth-visual .brand::after { display: none; }
+        .auth-visual .brand-mark { color: #1d3d8f; background: #fff; box-shadow: 0 10px 22px rgba(12,39,101,.2); animation: none; }
+        .auth-visual .brand strong { color: #fff; }
+        .auth-visual .brand small { color: rgba(255,255,255,.72); }
+        .auth-visual h2 { max-width: 280px; margin: 0 0 14px; font: 700 clamp(30px, 4vw, 46px)/1.08 'Space Grotesk', sans-serif; letter-spacing: -.04em; }
+        .auth-visual p { max-width: 300px; margin: 0; color: rgba(255,255,255,.78); line-height: 1.7; }
+        .auth-art { width: 215px; height: 150px; margin: 20px auto 0; border: 1px solid rgba(255,255,255,.3); border-radius: 40% 58% 45% 55%; background: linear-gradient(135deg, rgba(255,255,255,.2), rgba(255,255,255,.04)); transform: rotate(-7deg); box-shadow: 30px 28px 0 rgba(255,255,255,.08), -22px -18px 0 rgba(41,117,190,.25); }
+        .auth-content { padding: 52px clamp(28px, 6vw, 76px); color: #18243b; background: #fbfcfe; }
+        .auth-content h1 { margin: 28px 0 8px; color: #18243b; font: 700 32px/1.15 'Space Grotesk', sans-serif; letter-spacing: -.03em; }
+        .auth-content > .sub { margin: 0 0 28px; color: #71809a; line-height: 1.6; }
+        .auth-switch { display: inline-flex; margin: 0 0 28px; padding: 4px; border: 1px solid #d8e1ec; border-radius: 11px; background: #eef3f8; }
+        .auth-switch button { padding: 9px 24px; color: #315dbe; background: #fff; box-shadow: 0 3px 10px rgba(43,68,115,.08); }
+        .auth-tabs { margin: 0 0 22px; border-color: #e4e9f2; background: #f5f7fb; }
+        .auth-tab { color: #71809a; }
+        .auth-tab.active { color: #315dbe; background: #fff; box-shadow: 0 3px 9px rgba(43,68,115,.1); }
+        .login-form { gap: 14px; }
+        .login-form label { color: #52627c; font-size: 13px; font-weight: 600; }
+        .login-form input { margin-top: 7px; width: 100%; padding: 13px 14px; color: #18243b; border: 1px solid #dbe3ef; border-radius: 9px; background: #fff; outline: none; }
+        .login-form input:hover, .login-form input:focus { border-color: #4b75cf; box-shadow: 0 0 0 3px rgba(75,117,207,.12); }
+        .password-field { position: relative; }
+        .password-field input { padding-right: 48px; }
+        .password-toggle { position: absolute; right: 10px; bottom: 9px; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 7px; color: #71809a; background: transparent; }
+        .password-toggle:hover { color: #315dbe; background: #eef3f8; }
+        .login-form .btn { padding: 13px; border-radius: 9px; color: #fff; background: #315dbe; box-shadow: 0 9px 18px rgba(49,93,190,.18); }
+        .login-form .btn:hover { background: #244da8; transform: translateY(-1px); }
+        .google-btn { color: #25334a !important; border: 1px solid #dbe3ef; background: #fff !important; box-shadow: none !important; }
+        .auth-divider { display: flex; align-items: center; gap: 10px; margin: 17px 0 0; color: #9aa6b9; font-size: 11px; }
+        .auth-divider::before, .auth-divider::after { content: ''; height: 1px; flex: 1; background: #e4e9f2; }
+        .auth-note { margin: 20px 0 0; color: #8b97aa; font-size: 12px; line-height: 1.6; }
+        .verification-state { padding: 24px 0; text-align: center; }
+        .verification-icon { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 16px; border-radius: 50%; color: #187b62; background: #dff6ed; font-size: 25px; }
+        .verification-state h2 { margin: 0 0 8px; color: #18243b; font: 700 22px 'Space Grotesk'; }
+        .verification-state p { color: #71809a; line-height: 1.65; }
+        .login-box > .brand { display: none; }
+        @media (max-width: 720px) {
+            .login-screen { padding: 16px; }
+            .login-box { display: block; min-height: 0; border-radius: 18px; }
+            .auth-visual { min-height: 225px; padding: 26px; }
+            .auth-visual h2 { margin-top: 28px; font-size: 30px; }
+            .auth-visual p, .auth-art { display: none; }
+            .auth-content { padding: 30px 24px 34px; }
+            .auth-content h1 { margin-top: 0; font-size: 28px; }
         }
         .form-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 16px; }
         .student-actions { display: flex; gap: 6px; }
@@ -366,6 +419,8 @@
         .insight-value { color: var(--cyan); font-weight: 700; }
         .insight-empty { color: var(--muted); font-size: 13px; }
         .teacher-mode .admin-only { display: none !important; }
+        .owner-only { display: none !important; }
+        .owner-mode .owner-only { display: block !important; }
         .teacher-mode #delete-class, .teacher-mode #add-student-to-class { display: none !important; }
         .viewer-mode main .view form { display: none !important; }
         .viewer-mode main .view button { display: none !important; }
@@ -538,22 +593,69 @@
         }
         @media (max-width: 950px) { .cards { grid-template-columns: repeat(2, 1fr); } .layout { grid-template-columns: 1fr; } .form-grid { grid-template-columns: repeat(2, 1fr); } .certificate-workspace { grid-template-columns: 1fr; } }
         @media (max-width: 680px) { .app { display: block; } .sidebar { padding: 14px; border-right: 0; border-bottom: 1px solid var(--line); } .brand { margin-bottom: 16px; } .nav { display: flex; overflow-x: auto; } .nav-label, .side-note { display: none; } .nav button { flex: 0 0 auto; width: auto; } .nav button span:last-child { display: none; } main { padding: 23px 15px; } .topbar { align-items: flex-start; } .status { font-size: 0; padding: 10px; } .status i { width: 8px; height: 8px; } .cards { gap: 9px; } .card { padding: 14px; } .form-grid, .template, .grade-settings, .class-add-student-form { grid-template-columns: 1fr; } #grades .sheet-controls { grid-template-columns: 1fr; } .class-browser-tools { display: block; } .class-selection-tools { flex-wrap: wrap; margin-top: 12px; } .class-browser-count { margin-top: 9px; } }
+        .login-theme-toggle { display: block; margin: -25px 0 20px auto; padding: 9px 13px; border: 1px solid #d8e1ec; border-radius: 9px; color: #315dbe; background: rgba(255,255,255,.88); font-size: 12px; }
+        .login-theme-toggle:hover { background: #fff; }
+        .login-box { position: relative; isolation: isolate; }
+        .login-box::before { content: ''; position: absolute; inset: -1px; z-index: -1; border-radius: inherit; padding: 1px; background: linear-gradient(115deg, #67d8e8, #91a9ff 32%, #d889ff 56%, #67d8e8 82%, #91a9ff); background-size: 280% 280%; animation: loginRgbBorder 5s ease-in-out infinite; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+        .login-box::after { content: ''; position: absolute; inset: 8px; z-index: -1; border-radius: 12px; background: linear-gradient(120deg, rgba(103,216,232,.18), transparent 34%, rgba(197,155,255,.14) 70%, transparent); filter: blur(17px); opacity: .8; animation: loginRgbAura 5s ease-in-out infinite alternate; pointer-events: none; }
+        @keyframes loginRgbBorder { 0%, 100% { background-position: 0% 50%; filter: brightness(1); } 50% { background-position: 100% 50%; filter: brightness(1.32); } }
+        @keyframes loginRgbAura { from { opacity: .45; transform: scale(.98); } to { opacity: .9; transform: scale(1.02); } }
+        .login-screen.theme-dark { color: #edf4ff; background: #0c131e; background-image: linear-gradient(135deg, #081224 0%, #101b35 46%, #0a1426 100%); }
+        .login-screen.theme-dark::before { background: #17294a; opacity: .5; }
+        .login-screen.theme-dark .login-theme-toggle { border-color: rgba(157,182,224,.25); color: #dce8ff; background: rgba(18,29,49,.92); }
+        .login-screen.theme-dark .login-theme-toggle:hover { background: #1b2d4d; }
+        .login-screen.theme-dark .login-box { border-color: rgba(103,216,232,.28); background: linear-gradient(135deg, rgba(20,30,46,.95), rgba(15,24,37,.96)); box-shadow: var(--shadow), 0 0 28px rgba(103,216,232,.08); }
+        .login-screen.theme-dark .auth-content { color: #edf4ff; background: rgba(18,29,49,.92); }
+        .login-screen.theme-dark .auth-content h1 { color: #edf4ff; }
+        .login-screen.theme-dark .auth-content > .sub, .login-screen.theme-dark .auth-note { color: #9aaac1; }
+        .login-screen.theme-dark .auth-tabs { border-color: rgba(103,216,232,.16); background: rgba(255,255,255,.04); }
+        .login-screen.theme-dark .auth-tab { color: #9aaac1; }
+        .login-screen.theme-dark .auth-tab.active { color: #edf4ff; background: linear-gradient(135deg, rgba(103,216,232,.24), rgba(197,155,255,.18)); box-shadow: 0 0 16px rgba(103,216,232,.12); }
+        .login-screen.theme-dark .login-form label { color: #c7d5ef; }
+        .login-screen.theme-dark .login-form input { color: #edf4ff; border-color: rgba(157,182,224,.25); background: #142238; }
+        .login-screen.theme-dark .login-form input::placeholder { color: #8090aa; }
+        .login-screen.theme-dark .password-toggle { color: #9aaac1; }
+        .login-screen.theme-dark .password-toggle:hover { color: #67d8e8; background: rgba(103,216,232,.12); }
+        .login-screen.theme-dark .login-help { color: #9aaac1; background: rgba(84,232,255,.06); }
+        .login-screen.theme-dark .auth-visual { background: linear-gradient(145deg, #12285f 0%, #20558e 52%, #3b899e 100%); }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsuites@4.9.10/dist/jsuites.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspreadsheet-ce@4.15.0/dist/jspreadsheet.css">
 </head>
 <body>
-    <section class="login-screen" id="login-screen">
+    <section class="login-screen theme-light" id="login-screen">
         <div class="login-box">
-            <div class="brand"><div class="brand-mark">D</div><div><strong>System Data School</strong><small>School Desk · Local</small></div></div>
-            <h1>ចូលប្រើប្រាស់ប្រព័ន្ធ</h1>
-            <p class="sub">សូម login ដើម្បីគ្រប់គ្រងព័ត៌មានសិស្ស និងវត្តមាន។</p>
-            <form class="login-form" id="login-form">
-                <label>ឈ្មោះអ្នកប្រើប្រាស់<input name="username" required autocomplete="username" placeholder="Username"></label>
-                <label>ពាក្យសម្ងាត់<input name="password" type="password" required autocomplete="current-password" placeholder="Password"></label>
-                <p class="login-error" id="login-error" aria-live="polite"></p>
-                <button class="btn" type="submit">ចូលប្រព័ន្ធ</button>
-            </form>
+            <div class="auth-visual"><div class="brand"><div class="brand-mark">D</div><div><strong>System Data School</strong><small>School Desk · Local</small></div></div><div><h2>Learn. Grow. Belong.</h2><p>A welcoming digital space for every learner and school team.</p><div class="auth-art" aria-hidden="true"></div></div></div>
+            <div class="auth-content">
+                <button class="login-theme-toggle" id="login-theme-toggle" type="button" aria-pressed="false">☾ Dark mode</button>
+                <h1 id="auth-title">Welcome back</h1>
+                <p class="sub" id="auth-subtitle">Sign in to continue to your school workspace.</p>
+                <div class="auth-tabs"><button class="auth-tab active" type="button" data-auth-mode="user">User</button><button class="auth-tab" type="button" data-auth-mode="admin">Admin</button><button class="auth-tab" type="button" data-auth-mode="owner">Owner</button></div>
+                <div id="user-auth" class="auth-panel">
+                    <form class="login-form" id="user-login-form">
+                        <label>Username<input name="username" type="text" required autocomplete="username" placeholder="User username"></label>
+                        <label class="password-field">Password<input name="password" type="password" required minlength="6" autocomplete="current-password" placeholder="Enter your password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label>
+                        <p class="login-error" id="user-login-error" aria-live="polite"></p>
+                        <button class="btn" type="submit">Sign in</button>
+                    </form>
+                </div>
+            <div id="admin-auth" class="auth-panel" hidden>
+                <form class="login-form" id="admin-login-form">
+                    <label>Admin username<input name="username" required autocomplete="username" placeholder="Admin username"></label>
+                    <label class="password-field">Admin password<input name="password" type="password" required autocomplete="current-password" placeholder="Admin password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label>
+                    <p class="login-error" id="admin-login-error" aria-live="polite"></p>
+                    <button class="btn" type="submit">ចូលជា Admin</button>
+                </form>
+            </div>
+            <div id="owner-auth" hidden>
+                <form class="login-form" id="owner-login-form">
+                    <label>Owner username<input name="username" required autocomplete="username" placeholder="owner"></label>
+                    <label class="password-field">Owner password<input name="password" type="password" required autocomplete="current-password" placeholder="Owner password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label>
+                    <p class="login-error" id="owner-login-error" aria-live="polite"></p>
+                    <button class="btn" type="submit">ចូលជា Owner</button>
+                </form>
+            </div>
+            <div class="user-welcome" id="user-welcome" hidden><h2>សួស្តី!</h2><p id="user-email"></p><p class="sub">អ្នកបានចូលជា User ដែល Admin/Owner បានបង្កើត។</p><button class="btn ghost" id="user-logout" type="button">ចាកចេញ</button></div>
         </div>
     </section>
     <div class="app auth-hidden" id="app">
@@ -572,6 +674,7 @@
                 <button data-view="announcements"><span class="nav-icon">!</span><span>សេចក្តីជូនដំណឹង</span></button>
                 <button data-view="reports"><span class="nav-icon">▥</span><span>របាយការណ៍</span></button>
                 <button data-view="backup"><span class="nav-icon">↕</span><span>បម្រុងទុក/ស្ដារ</span></button>
+                <button class="owner-only" data-view="owner-accounts"><span class="nav-icon">♙</span><span>បង្កើត Account</span></button>
             </nav>
             <div class="side-note">ទិន្នន័យនឹង sync ទៅ cloud នៅពេល server និង Supabase ត្រូវបានកំណត់ត្រឹមត្រូវ។</div>
         </aside>
@@ -645,44 +748,37 @@
                 return '';
             }
         };
-        document.addEventListener('pointerdown', event => {
-            if (event.pointerType === 'touch') return;
-            const ripple = document.createElement('span');
-            ripple.className = 'rgb-ripple';
-            ripple.style.left = `${event.clientX}px`;
-            ripple.style.top = `${event.clientY}px`;
-            document.body.append(ripple);
-            ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
-            const flash = document.createElement('span');
-            flash.className = 'rgb-flash';
-            flash.style.left = `${event.clientX}px`;
-            flash.style.top = `${event.clientY}px`;
-            document.body.append(flash);
-            flash.addEventListener('animationend', () => flash.remove(), { once: true });
-            for (let index = 0; index < 8; index += 1) {
-                const bolt = document.createElement('span');
-                bolt.className = 'rgb-lightning';
-                bolt.style.left = `${event.clientX}px`;
-                bolt.style.top = `${event.clientY}px`;
-                bolt.style.setProperty('--bolt-angle', `${index * 45 + (Math.random() * 12 - 6)}deg`);
-                bolt.style.setProperty('--bolt-length', `${52 + Math.random() * 58}px`);
-                bolt.style.animationDelay = `${index * .018}s`;
-                document.body.append(bolt);
-                bolt.addEventListener('animationend', () => bolt.remove(), { once: true });
-            }
-        }, { passive: true });
         const loginScreen = document.getElementById('login-screen');
+        const loginThemeToggle = document.getElementById('login-theme-toggle');
         const app = document.getElementById('app');
-        const loginForm = document.getElementById('login-form');
-        const loginError = document.getElementById('login-error');
+        const adminLoginForm = document.getElementById('admin-login-form');
+        const adminLoginError = document.getElementById('admin-login-error');
+        const ownerLoginForm = document.getElementById('owner-login-form');
+        const ownerLoginError = document.getElementById('owner-login-error');
+        const userLoginForm = document.getElementById('user-login-form');
+        const userLoginError = document.getElementById('user-login-error');
         let currentRole = sessionStorage.getItem('seyha-role') || '';
-        const isAdmin = () => currentRole === 'admin';
+        const isAdmin = () => currentRole === 'admin' || currentRole === 'owner';
+        const isOwner = () => currentRole === 'owner';
         const isViewer = () => currentRole === 'user';
-        const applyRole = () => { app.classList.toggle('teacher-mode', !isAdmin()); app.classList.toggle('viewer-mode', isViewer()); document.getElementById('current-role').textContent = isAdmin() ? 'Admin' : isViewer() ? 'User' : 'Teacher'; };
-        const unlock = () => { loginScreen.style.display = 'none'; app.classList.remove('auth-hidden'); applyRole(); };
+        const applyRole = () => { app.classList.toggle('teacher-mode', !isAdmin()); app.classList.toggle('viewer-mode', isViewer()); app.classList.toggle('owner-mode', isOwner()); document.getElementById('current-role').textContent = isOwner() ? 'Owner' : isAdmin() ? 'Admin' : isViewer() ? 'User' : 'Teacher'; };
+        const renderOwnerSettings = () => { if (!isOwner() || document.getElementById('owner-accounts')) return; const section = document.createElement('section'); section.className = 'view owner-only'; section.id = 'owner-accounts'; section.innerHTML = '<div class="layout"><div class="panel"><div class="panel-head"><div><h2>បង្កើត Admin account</h2><small>Owner តែម្នាក់អាចកំណត់ Username និង Password សម្រាប់ Admin</small></div></div><form class="login-form" id="owner-admin-form"><label>Admin username<input name="username" required autocomplete="off"></label><label>Admin password<input name="password" type="password" required minlength="8" autocomplete="new-password"></label><label>បញ្ជាក់ Owner password<input name="ownerPassword" type="password" required autocomplete="current-password"></label><p class="login-error" id="owner-admin-error" aria-live="polite"></p><button class="btn" type="submit">បង្កើត Admin account</button></form></div><div class="panel"><div class="panel-head"><div><h2>បង្កើត User account</h2><small>Owner អាចបង្កើត Username និង Password សម្រាប់ User</small></div></div><form class="login-form" id="owner-user-form"><label>User username<input name="username" required autocomplete="off"></label><label>User password<input name="password" type="password" required minlength="8" autocomplete="new-password"></label><label>បញ្ជាក់ Owner password<input name="creatorPassword" type="password" required autocomplete="current-password"></label><p class="login-error" id="owner-user-error" aria-live="polite"></p><button class="btn" type="submit">បង្កើត User account</button></form></div></div>'; document.querySelector('main').append(section); section.querySelector('#owner-admin-form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#owner-admin-error'); error.textContent = ''; const response = await fetch('/api/owner/admin-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានបង្កើត Admin account រួចរាល់។ អាច login ជា Admin បាន។' : (result.error || 'មិនអាចបង្កើតបានទេ។'); if (response.ok) event.currentTarget.reset(); }); section.querySelector('#owner-user-form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#owner-user-error'); error.textContent = ''; const payload = Object.fromEntries(new FormData(event.currentTarget)); payload.creatorRole = 'owner'; const response = await fetch('/api/managed-user-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានបង្កើត User account រួចរាល់។ អាច login ជា User បាន។' : (result.error || 'មិនអាចបង្កើតបានទេ។'); if (response.ok) event.currentTarget.reset(); }); };
+        const renderManagedUserSettings = () => { if (!isAdmin() || isOwner() || document.getElementById('managed-user-settings')) return; const section = document.createElement('section'); section.className = 'admin-only'; section.id = 'managed-user-settings'; section.innerHTML = '<div class="panel"><div class="panel-head"><div><h2>បង្កើត User account</h2><small>Admin អាចបង្កើត Username និង Password សម្រាប់ User</small></div></div><form class="login-form" id="managed-user-form"><label>User username<input name="username" required autocomplete="off"></label><label>User password<input name="password" type="password" required minlength="8" autocomplete="new-password"></label><label>Password របស់អ្នក<input name="creatorPassword" type="password" required autocomplete="current-password"></label><p class="login-error" id="managed-user-error" aria-live="polite"></p><button class="btn" type="submit">បង្កើត User account</button></form></div>'; document.querySelector('main').append(section); section.querySelector('form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#managed-user-error'); error.textContent = ''; const payload = Object.fromEntries(new FormData(event.currentTarget)); payload.creatorRole = currentRole; payload.creatorUsername = sessionStorage.getItem('seyha-username') || ''; const response = await fetch('/api/managed-user-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានបង្កើត User account រួចរាល់។' : (result.error || 'មិនអាចបង្កើតបានទេ។'); if (response.ok) event.currentTarget.reset(); }); };
+        const unlock = () => { loginScreen.style.display = 'none'; app.classList.remove('auth-hidden'); applyRole(); renderOwnerSettings(); renderManagedUserSettings(); };
+        const switchAuthMode = mode => { document.querySelectorAll('.auth-tab').forEach(item => item.classList.toggle('active', item.dataset.authMode === mode)); document.getElementById('user-auth').hidden = mode !== 'user'; document.getElementById('admin-auth').hidden = mode !== 'admin'; document.getElementById('owner-auth').hidden = mode !== 'owner'; document.getElementById('auth-title').textContent = mode === 'admin' ? 'Admin access' : mode === 'owner' ? 'Owner access' : 'Welcome back'; document.getElementById('auth-subtitle').textContent = mode === 'user' ? 'Sign in to continue to your school workspace.' : 'Use your separate school staff credentials to continue.'; };
+        const setLoginTheme = theme => { const isDark = theme === 'dark'; loginScreen.classList.toggle('theme-dark', isDark); loginScreen.classList.toggle('theme-light', !isDark); loginThemeToggle.textContent = isDark ? '☀ Light mode' : '☾ Dark mode'; loginThemeToggle.setAttribute('aria-pressed', String(isDark)); loginThemeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode'); localStorage.setItem('seyha-login-theme', isDark ? 'dark' : 'light'); };
+        loginThemeToggle.addEventListener('click', () => setLoginTheme(loginScreen.classList.contains('theme-dark') ? 'light' : 'dark'));
+        setLoginTheme(localStorage.getItem('seyha-login-theme') === 'dark' ? 'dark' : 'light');
+        document.querySelectorAll('[data-auth-mode]').forEach(tab => tab.addEventListener('click', () => switchAuthMode(tab.dataset.authMode)));
+        document.addEventListener('click', event => { const toggle = event.target.closest('[data-password-toggle]'); if (!toggle) return; const input = toggle.parentElement.querySelector('input[type="password"], input[type="text"]'); if (!input) return; const visible = input.type === 'text'; input.type = visible ? 'password' : 'text'; toggle.textContent = visible ? '◉' : '◌'; toggle.setAttribute('aria-label', visible ? 'Show password' : 'Hide password'); });
+        const roleLogin = async (form, errorElement) => { errorElement.textContent = ''; try { const credentials = Object.fromEntries(new FormData(form)); const response = await fetch('/api/role-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(credentials) }); if (!response.ok) { const result = await response.json().catch(() => ({})); errorElement.textContent = result.error || 'Username ឬ Password មិនត្រឹមត្រូវ។'; return; } const result = await response.json(); currentRole = result.role; sessionStorage.setItem('seyha-auth', 'true'); sessionStorage.setItem('seyha-role', currentRole); sessionStorage.setItem('seyha-username', credentials.username); unlock(); } catch (error) { console.error('Login request failed.', error); errorElement.textContent = 'មិនអាចភ្ជាប់ទៅ server បានទេ។ សូម Deploy server ហើយសាកល្បងម្ដងទៀត។'; } };
+        adminLoginForm.addEventListener('submit', event => { event.preventDefault(); roleLogin(adminLoginForm, adminLoginError); });
+        ownerLoginForm.addEventListener('submit', event => { event.preventDefault(); roleLogin(ownerLoginForm, ownerLoginError); });
+        userLoginForm.addEventListener('submit', event => { event.preventDefault(); roleLogin(userLoginForm, userLoginError); });
+        const clearAuth = () => { sessionStorage.removeItem('seyha-auth'); sessionStorage.removeItem('seyha-role'); sessionStorage.removeItem('seyha-username'); currentRole = ''; app.classList.add('auth-hidden'); loginScreen.style.display = 'grid'; adminLoginForm.reset(); ownerLoginForm.reset(); userLoginForm.reset(); switchAuthMode('user'); };
+        document.getElementById('logout').addEventListener('click', clearAuth);
+        document.getElementById('user-logout').addEventListener('click', clearAuth);
         if (sessionStorage.getItem('seyha-auth') === 'true' && currentRole) unlock();
-        loginForm.addEventListener('submit', event => { event.preventDefault(); const data = Object.fromEntries(new FormData(loginForm)); const role = data.username === 'admin' && data.password === '@Seyha1525@' ? 'admin' : data.username === 'teacher' && data.password === 'RIGENSCHOOL' ? 'teacher' : data.username === 'user' && data.password === '1234' ? 'user' : ''; if (role) { currentRole = role; sessionStorage.setItem('seyha-auth', 'true'); sessionStorage.setItem('seyha-role', role); loginError.textContent = ''; unlock(); } else { loginError.textContent = 'ឈ្មោះអ្នកប្រើប្រាស់ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។'; } });
-        document.getElementById('logout').addEventListener('click', () => { sessionStorage.removeItem('seyha-auth'); sessionStorage.removeItem('seyha-role'); currentRole = ''; app.classList.add('auth-hidden'); loginScreen.style.display = 'grid'; loginForm.reset(); });
         const store = { students: JSON.parse(localStorage.getItem('seyha-students') || '[]'), grades: JSON.parse(localStorage.getItem('seyha-grades') || '{}'), attendance: JSON.parse(localStorage.getItem('seyha-attendance') || '[]'), classes: JSON.parse(localStorage.getItem('seyha-classes') || '[]').map(item => ({ ...item, studentIds: Array.isArray(item.studentIds) ? item.studentIds : [] })) };
         const normalizeClassMemberships = () => { const assigned = new Set(); store.classes.forEach(item => { item.studentIds = item.studentIds.filter(id => { if (assigned.has(id)) return false; assigned.add(id); return true; }); }); };
         normalizeClassMemberships();
@@ -709,13 +805,14 @@
                 const response = await fetch('/api/storage');
                 if (!response.ok) throw new Error(`Cloud load failed with status ${response.status}`);
                 const result = await response.json();
-                if (result.data && Object.keys(result.data).length && !sessionStorage.getItem('cloud-storage-loaded')) {
-                    Object.entries(result.data).forEach(([key, value]) => localStorage.setItem(key, String(value)));
-                    sessionStorage.setItem('cloud-storage-loaded', 'true');
+                const remoteData = result.data && typeof result.data === 'object' ? result.data : {};
+                const remoteChanged = Object.entries(remoteData).some(([key, value]) => localStorage.getItem(key) !== String(value));
+                if (Object.keys(remoteData).length && remoteChanged) {
+                    Object.entries(remoteData).forEach(([key, value]) => localStorage.setItem(key, String(value)));
                     window.location.reload();
                     return;
                 }
-                if (!result.data || !Object.keys(result.data).length) syncRemoteStorage();
+                if (!Object.keys(remoteData).length) syncRemoteStorage();
             } catch (error) {
                 console.warn('Cloud storage unavailable; continuing with local browser storage.', error);
             }
@@ -725,10 +822,16 @@
             try {
                 const response = await fetch('/api/health');
                 const result = await response.json();
-                if (!response.ok || !result.supabaseConfigured) throw new Error('Supabase is not configured');
+                if (!response.ok || !result.supabaseConfigured) {
+                    const missing = Array.isArray(result.missing) && result.missing.length
+                        ? ` ខ្វះ៖ ${result.missing.join(', ')}`
+                        : '';
+                    throw new Error(`Supabase is not configured.${missing}`);
+                }
                 status.innerHTML = '<i></i> Cloud connected';
             } catch (error) {
                 status.innerHTML = '<i></i> Local mode';
+                status.title = error.message;
                 console.warn('Cloud health check failed.', error);
             }
         };
@@ -902,7 +1005,7 @@
             renderClasses();
             renderCertificate();
         }
-        function showView(id) { document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === id)); document.querySelectorAll('.nav button').forEach(button => button.classList.toggle('active', button.dataset.view === id)); const titles = { dashboard:'សួស្តី, អ្នកគ្រប់គ្រង', students:'បញ្ជីសិស្ស', grades:'តារាងពិន្ទុ', attendance:'វត្តមានសិស្ស', classes:'ថ្នាក់រៀននីមួយៗ', certificates:'ប័ណ្ណសរសើរ' }; document.getElementById('page-title').textContent = titles[id]; }
+        function showView(id) { document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === id)); document.querySelectorAll('.nav button').forEach(button => button.classList.toggle('active', button.dataset.view === id)); const titles = { dashboard:'សួស្តី, អ្នកគ្រប់គ្រង', students:'បញ្ជីសិស្ស', grades:'តារាងពិន្ទុ', attendance:'វត្តមានសិស្ស', classes:'ថ្នាក់រៀននីមួយៗ', certificates:'ប័ណ្ណសរសើរ', 'owner-accounts':'បង្កើត Admin និង User account' }; document.getElementById('page-title').textContent = titles[id]; }
         const gradePanel = document.querySelector('#grades .panel');
         const excelRibbon = document.createElement('div');
         excelRibbon.className = 'excel-ribbon print-hide';
