@@ -9,6 +9,14 @@ const supabaseBucket = process.env.SUPABASE_BUCKET || 'school-files';
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('.'));
 
+app.get('/api/health', (_request, response) => {
+    response.json({
+        ok: true,
+        supabaseConfigured: Boolean(supabaseUrl && supabaseSecretKey),
+        bucketConfigured: Boolean(supabaseBucket)
+    });
+});
+
 const safeUploadKey = (key = '') => String(key || '').replace(/^\/+/, '').replace(/\\/g, '/');
 
 const supabaseRequest = async (path, options = {}) => {
@@ -37,7 +45,8 @@ const supabaseStorageUpload = async (key, data, contentType = 'application/octet
     }
 
     const safeKey = safeUploadKey(key);
-    const response = await fetch(`${supabaseUrl}/storage/v1/object/${supabaseBucket}/${encodeURIComponent(safeKey)}`, {
+    const encodedKey = safeKey.split('/').map(segment => encodeURIComponent(segment)).join('/');
+    const response = await fetch(`${supabaseUrl}/storage/v1/object/${supabaseBucket}/${encodedKey}`, {
         method: 'POST',
         headers: {
             apikey: supabaseSecretKey,
@@ -66,7 +75,7 @@ app.get('/api/storage', async (_request, response) => {
         response.json({ data: rows[0]?.data || null });
     } catch (error) {
         console.error(error);
-        response.status(503).json({ error: 'Cloud storage is not configured or unavailable.' });
+        response.status(503).json({ error: 'Cloud storage is not configured or unavailable.', detail: error.message });
     }
 });
 
@@ -84,7 +93,7 @@ app.put('/api/storage', async (request, response) => {
         response.status(204).end();
     } catch (error) {
         console.error(error);
-        response.status(503).json({ error: 'Cloud storage is not configured or unavailable.' });
+        response.status(503).json({ error: 'Cloud storage is not configured or unavailable.', detail: error.message });
     }
 });
 
@@ -110,7 +119,7 @@ app.post('/api/upload', async (request, response) => {
         });
     } catch (error) {
         console.error(error);
-        response.status(503).json({ error: 'File upload to Supabase failed.' });
+        response.status(503).json({ error: 'File upload to Supabase failed.', detail: error.message });
     }
 });
 

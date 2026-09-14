@@ -9,6 +9,8 @@ services:
         sync: false
       - key: SUPABASE_SECRET_KEY
         sync: false
+      - key: SUPABASE_BUCKET
+        value: school-files
     headers:
       - path: /*
         name: X-Content-Type-Options

@@ -573,10 +573,10 @@
                 <button data-view="reports"><span class="nav-icon">▥</span><span>របាយការណ៍</span></button>
                 <button data-view="backup"><span class="nav-icon">↕</span><span>បម្រុងទុក/ស្ដារ</span></button>
             </nav>
-            <div class="side-note">ទិន្នន័យរបស់អ្នករក្សាទុកក្នុង browser លើ laptop នេះ។ មិនមានការផ្ញើទៅ server ខាងក្រៅទេ។</div>
+            <div class="side-note">ទិន្នន័យនឹង sync ទៅ cloud នៅពេល server និង Supabase ត្រូវបានកំណត់ត្រឹមត្រូវ។</div>
         </aside>
         <main>
-            <header class="topbar"><div><p class="eyebrow">School administration · 2026</p><h1 id="page-title">សួស្តី, អ្នកគ្រប់គ្រង</h1><p class="sub">គ្រប់គ្រងសិស្ស និងវត្តមាននៅកន្លែងតែមួយ។</p></div><div class="header-actions"><div class="status"><i></i> Local mode</div><span class="pill" id="current-role">Admin</span><button class="btn ghost" id="logout">ចាកចេញ</button></div></header>
+            <header class="topbar"><div><p class="eyebrow">School administration · 2026</p><h1 id="page-title">សួស្តី, អ្នកគ្រប់គ្រង</h1><p class="sub">គ្រប់គ្រងសិស្ស និងវត្តមាននៅកន្លែងតែមួយ។</p></div><div class="header-actions"><div class="status" id="cloud-status"><i></i> Checking cloud...</div><span class="pill" id="current-role">Admin</span><button class="btn ghost" id="logout">ចាកចេញ</button></div></header>
 
             <section class="view active" id="dashboard">
                 <div class="cards"><div class="card"><span class="label">សិស្សសរុប</span><div class="number" id="student-count">0</div><span class="hint">រក្សាទុកក្នុងឧបករណ៍នេះ</span></div><div class="card"><span class="label">វត្តមានថ្ងៃនេះ</span><div class="number" id="attendance-count">0%</div><span class="hint">អាច import ពី Excel</span></div><div class="card"><span class="label">ថ្នាក់សិក្សា</span><div class="number" id="class-count">0</div><span class="hint">ទិន្នន័យសាលា</span></div></div>
@@ -718,6 +718,18 @@
                 if (!result.data || !Object.keys(result.data).length) syncRemoteStorage();
             } catch (error) {
                 console.warn('Cloud storage unavailable; continuing with local browser storage.', error);
+            }
+        };
+        const checkCloudStatus = async () => {
+            const status = document.getElementById('cloud-status');
+            try {
+                const response = await fetch('/api/health');
+                const result = await response.json();
+                if (!response.ok || !result.supabaseConfigured) throw new Error('Supabase is not configured');
+                status.innerHTML = '<i></i> Cloud connected';
+            } catch (error) {
+                status.innerHTML = '<i></i> Local mode';
+                console.warn('Cloud health check failed.', error);
             }
         };
         const storedSchoolName = localStorage.getItem('seyha-school') || '';
@@ -1284,6 +1296,7 @@
         applyBranding();
         render();
         initializeRemoteStorage();
+        checkCloudStatus();
         document.getElementById('certificate-template-file').accept = '.pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp';
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>

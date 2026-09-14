@@ -22,3 +22,7 @@ drop trigger if exists school_storage_updated_at on public.school_storage;
 create trigger school_storage_updated_at
 before update on public.school_storage
 for each row execute function public.touch_school_storage_updated_at();
+
+insert into storage.buckets (id, name, public)
+values ('school-files', 'school-files', true)
+on conflict (id) do update set public = excluded.public;
