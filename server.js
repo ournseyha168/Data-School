@@ -19,6 +19,20 @@ app.get('/api/health', (_request, response) => {
     response.json({ ok: true, supabaseConfigured: Boolean(supabaseUrl && supabaseSecretKey), bucketConfigured: Boolean(supabaseBucket), missing });
 });
 
+app.get('/api/exchange-rate', async (_request, response) => {
+    try {
+        const result = await fetch('https://open.er-api.com/v6/latest/USD');
+        if (!result.ok) throw new Error(`Exchange-rate provider returned ${result.status}.`);
+        const data = await result.json();
+        const rate = Number(data?.rates?.KHR);
+        if (!Number.isFinite(rate) || rate <= 0) throw new Error('USD/KHR rate was not provided.');
+        response.json({ base: 'USD', target: 'KHR', rate, updatedAt: data.time_last_update_utc || new Date().toISOString() });
+    } catch (error) {
+        console.error('Exchange-rate lookup failed.', error);
+        response.status(503).json({ error: 'មិនអាចទាញយកអត្រាប្តូរប្រាក់បច្ចុប្បន្នបានទេ។' });
+    }
+});
+
 // Supabase REST is the only database boundary for accounts and school data.
 const safeUploadKey = (key = '') => String(key || '').replace(/^\/+/, '').replace(/\\/g, '/');
 const supabaseRequest = async (path, options = {}) => {
