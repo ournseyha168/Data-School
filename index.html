@@ -912,9 +912,25 @@
             }, 700);
         };
         const save = () => { localStorage.setItem('seyha-students', JSON.stringify(store.students)); localStorage.setItem('seyha-grades', JSON.stringify(store.grades)); localStorage.setItem('seyha-attendance', JSON.stringify(store.attendance)); localStorage.setItem('seyha-classes', JSON.stringify(store.classes)); render(); syncRemoteStorage(); };
+        const parseStoredValue = (key, fallback) => {
+            try {
+                const value = JSON.parse(localStorage.getItem(key) || '');
+                return value ?? fallback;
+            } catch {
+                return fallback;
+            }
+        };
+        const hydrateStoreFromLocalStorage = () => {
+            store.students = Array.isArray(parseStoredValue('seyha-students', [])) ? parseStoredValue('seyha-students', []) : [];
+            store.grades = parseStoredValue('seyha-grades', {});
+            store.attendance = Array.isArray(parseStoredValue('seyha-attendance', [])) ? parseStoredValue('seyha-attendance', []) : [];
+            store.classes = Array.isArray(parseStoredValue('seyha-classes', []))
+                ? parseStoredValue('seyha-classes', []).map(item => ({ ...item, studentIds: Array.isArray(item.studentIds) ? item.studentIds : [] }))
+                : [];
+        };
         const initializeRemoteStorage = async () => {
             try {
-                const response = await fetch('/api/storage');
+                const response = await fetch('/api/storage', { signal: AbortSignal.timeout(10000) });
                 if (!response.ok) throw new Error(`Cloud load failed with status ${response.status}`);
                 const result = await response.json();
                 const remoteData = result.data && typeof result.data === 'object' ? result.data : {};
@@ -922,10 +938,8 @@
                 const remoteChanged = syncableRemoteEntries.some(([key, value]) => localStorage.getItem(key) !== String(value));
                 if (Object.keys(remoteData).length && remoteChanged) {
                     syncableRemoteEntries.forEach(([key, value]) => localStorage.setItem(key, String(value)));
-                    store.students = JSON.parse(localStorage.getItem('seyha-students') || '[]');
-                    store.grades = JSON.parse(localStorage.getItem('seyha-grades') || '{}');
-                    store.attendance = JSON.parse(localStorage.getItem('seyha-attendance') || '[]');
-                    store.classes = JSON.parse(localStorage.getItem('seyha-classes') || '[]');
+                    hydrateStoreFromLocalStorage();
+                    normalizeClassMemberships();
                     render();
                 }
                 if (!Object.keys(remoteData).length) syncRemoteStorage();

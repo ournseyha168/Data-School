@@ -10,6 +10,9 @@ const ownerPassword = process.env.OWNER_PASSWORD || '@Seyha1525@';
 const supabaseBucket = process.env.SUPABASE_BUCKET || 'school-files';
 let exchangeRateCache = null;
 const exchangeRateCacheTtlMs = 60 * 60 * 1000;
+let storageCache = null;
+let storageCacheAt = 0;
+const storageCacheTtlMs = 30 * 1000;
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('.'));
@@ -221,9 +224,15 @@ const supabaseStorageUpload = async (key, data, contentType = 'application/octet
 };
 
 app.get('/api/storage', async (_request, response) => {
+    if (storageCache && Date.now() - storageCacheAt < storageCacheTtlMs) {
+        response.json({ data: storageCache });
+        return;
+    }
     try {
         const rows = await supabaseRequest('school_storage?id=eq.main&select=data');
-        response.json({ data: rows[0]?.data || null });
+        storageCache = rows[0]?.data || null;
+        storageCacheAt = Date.now();
+        response.json({ data: storageCache });
     } catch (error) {
         console.error(error);
         response.status(503).json({ error: 'Cloud storage is not configured or unavailable.', detail: error.message });
@@ -237,6 +246,8 @@ app.put('/api/storage', async (request, response) => {
     }
     try {
         await supabaseRequest('school_storage?on_conflict=id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify({ id: 'main', data: request.body.data }) });
+        storageCache = request.body.data;
+        storageCacheAt = Date.now();
         response.status(204).end();
     } catch (error) {
         console.error(error);
