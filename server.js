@@ -8,6 +8,8 @@ const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABAS
 const ownerUsername = process.env.OWNER_USERNAME || 'owner';
 const ownerPassword = process.env.OWNER_PASSWORD || '@Seyha1525@';
 const supabaseBucket = process.env.SUPABASE_BUCKET || 'school-files';
+let exchangeRateCache = null;
+const exchangeRateCacheTtlMs = 60 * 60 * 1000;
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('.'));
@@ -20,13 +22,19 @@ app.get('/api/health', (_request, response) => {
 });
 
 app.get('/api/exchange-rate', async (_request, response) => {
+    if (exchangeRateCache && Date.now() - exchangeRateCache.cachedAt < exchangeRateCacheTtlMs) {
+        response.json(exchangeRateCache.value);
+        return;
+    }
     try {
-        const result = await fetch('https://open.er-api.com/v6/latest/USD');
+        const result = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(8000) });
         if (!result.ok) throw new Error(`Exchange-rate provider returned ${result.status}.`);
         const data = await result.json();
         const rate = Number(data?.rates?.KHR);
         if (!Number.isFinite(rate) || rate <= 0) throw new Error('USD/KHR rate was not provided.');
-        response.json({ base: 'USD', target: 'KHR', rate, updatedAt: data.time_last_update_utc || new Date().toISOString() });
+        const value = { base: 'USD', target: 'KHR', rate, updatedAt: data.time_last_update_utc || new Date().toISOString() };
+        exchangeRateCache = { cachedAt: Date.now(), value };
+        response.json(value);
     } catch (error) {
         console.error('Exchange-rate lookup failed.', error);
         response.status(503).json({ error: 'មិនអាចទាញយកអត្រាប្តូរប្រាក់បច្ចុប្បន្នបានទេ។' });
