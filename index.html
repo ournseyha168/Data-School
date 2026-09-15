@@ -428,6 +428,12 @@
         .owner-mode .owner-only.view.active { display: block !important; }
         .teacher-mode #delete-class, .teacher-mode #add-student-to-class { display: none !important; }
         .permission-hidden { display: none !important; }
+        .account-search { max-width: 360px; margin: 0 0 16px; }
+        .account-list { display: grid; gap: 14px; }
+        .account-list .panel { margin: 0; }
+        .account-list .panel-head { align-items: center; }
+        .account-list .account-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .account-list .permission-account h3 { margin: 0; }
         .viewer-mode .student-artboard, .viewer-mode .person-detail-card { filter: blur(7px); user-select: none; pointer-events: none; }
         .viewer-mode .toast { filter: none; }
         @media (max-width: 680px) { .dashboard-insights { grid-template-columns: 1fr; } }
@@ -778,16 +784,61 @@
         const accessibleStudentIds = () => new Set(accessibleClasses().flatMap(item => Array.isArray(item.studentIds) ? item.studentIds : []));
         const accessibleStudents = () => isAdmin() ? store.students : store.students.filter(student => accessibleStudentIds().has(student.id));
         const applyRole = () => { app.classList.toggle('teacher-mode', isViewer()); app.classList.toggle('viewer-mode', false); app.classList.toggle('owner-mode', isOwner()); document.getElementById('current-role').textContent = isOwner() ? 'Owner' : isAdmin() ? 'Admin' : isViewer() ? 'Teacher' : 'Teacher'; applyPermissions(); };
-        const renderOwnerSettings = () => { if (!isOwner() || document.getElementById('owner-accounts')) return; const section = document.createElement('section'); section.className = 'view owner-only'; section.id = 'owner-accounts'; section.innerHTML = '<div class="layout"><div class="panel"><div class="panel-head"><div><h2>បង្កើត Admin account</h2><small>Owner តែម្នាក់អាចកំណត់ Username និង Password សម្រាប់ Admin</small></div></div><form class="login-form" id="owner-admin-form"><label>Admin username<input name="username" required autocomplete="off"></label><label class="password-field">Admin password<input name="password" type="password" required minlength="8" autocomplete="new-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><label class="password-field">បញ្ជាក់ Owner password<input name="ownerPassword" type="password" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><p class="login-error" id="owner-admin-error" aria-live="polite"></p><button class="btn" type="submit">បង្កើត Admin account</button></form></div><div class="panel"><div class="panel-head"><div><h2>បង្កើត Teacher account</h2><small>Owner អាចបង្កើត Username និង Password សម្រាប់ Teacher</small></div></div><form class="login-form" id="owner-user-form"><label>Teacher username<input name="username" required autocomplete="off"></label><label class="password-field">Teacher password<input name="password" type="password" required minlength="8" autocomplete="new-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><label class="password-field">បញ្ជាក់ Owner password<input name="creatorPassword" type="password" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><p class="login-error" id="owner-user-error" aria-live="polite"></p><button class="btn" type="submit">បង្កើត Teacher account</button></form></div></div>'; document.querySelector('main').append(section); section.querySelector('#owner-admin-form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#owner-admin-error'); error.textContent = ''; const response = await fetch('/api/owner/admin-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានបង្កើត Admin account រួចរាល់។ អាច login ជា Admin បាន។' : (result.error || 'មិនអាចបង្កើតបានទេ។'); if (response.ok) event.currentTarget.reset(); }); section.querySelector('#owner-user-form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#owner-user-error'); error.textContent = ''; const payload = Object.fromEntries(new FormData(event.currentTarget)); payload.creatorRole = 'owner'; const response = await fetch('/api/managed-user-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានបង្កើត Teacher account រួចរាល់។ អាច login ជា Teacher បាន។' : (result.error || 'មិនអាចបង្កើតបានទេ។'); if (response.ok) event.currentTarget.reset(); }); };
+        const renderOwnerAccountList = section => {
+            const panel = document.createElement('div');
+            panel.className = 'panel';
+            panel.innerHTML = '<div class="panel-head"><div><h2>គ្រប់គ្រង Account</h2><small>ស្វែងរក និងលុប Admin ឬ Teacher account ដែលមិនប្រើ។</small></div><button class="btn ghost" type="button" id="refresh-owner-accounts">បង្ហាញ Account</button></div><input class="account-search" id="owner-account-search" type="search" placeholder="ស្វែងរកតាម Username..." aria-label="ស្វែងរក account"><p class="login-error" id="owner-account-error" aria-live="polite"></p><div class="account-list" id="owner-account-list"><p class="empty">ចុច “បង្ហាញ Account” ដើម្បីទាញយកបញ្ជី។</p></div>';
+            section.querySelector('.layout').append(panel);
+            const list = panel.querySelector('#owner-account-list');
+            const search = panel.querySelector('#owner-account-search');
+            const error = panel.querySelector('#owner-account-error');
+            let accounts = [];
+            let ownerPassword = '';
+            const render = () => {
+                const query = search.value.trim().toLowerCase();
+                const visible = accounts.filter(account => account.username.toLowerCase().includes(query));
+                list.innerHTML = visible.map(account => `<div class="panel permission-account"><div class="panel-head"><div><h3>${esc(account.username)}</h3><small>${account.role === 'admin' ? 'Admin' : 'Teacher'}</small></div><div class="account-actions"><button class="btn danger" type="button" data-delete-account="${esc(account.username)}">លុប Account</button></div></div></div>`).join('') || '<p class="empty">មិនមាន Account ត្រូវនឹងការស្វែងរកទេ។</p>';
+                list.querySelectorAll('[data-delete-account]').forEach(button => button.addEventListener('click', async () => {
+                    const username = button.dataset.deleteAccount;
+                    if (!window.confirm(`តើអ្នកពិតជាចង់លុប account "${username}" មែនទេ?`)) return;
+                    const response = await fetch('/api/delete-managed-account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ownerPassword, targetUsername: username }) });
+                    const result = await response.json().catch(() => ({}));
+                    if (!response.ok) { error.textContent = result.error || 'មិនអាចលុប Account បានទេ។'; return; }
+                    accounts = accounts.filter(account => account.username !== username);
+                    delete userPermissions[username];
+                    localStorage.setItem('seyha-permissions', JSON.stringify(userPermissions));
+                    syncRemoteStorage();
+                    error.textContent = '';
+                    render();
+                    notify(`បានលុប account ${username} រួចរាល់។`);
+                }));
+            };
+            search.addEventListener('input', render);
+            panel.querySelector('#refresh-owner-accounts').addEventListener('click', async () => {
+                error.textContent = '';
+                ownerPassword = window.prompt('បញ្ចូល Owner password ដើម្បីបង្ហាញ Account') || '';
+                if (!ownerPassword) return;
+                const response = await fetch('/api/managed-accounts-list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ownerPassword }) });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) { error.textContent = result.error || 'មិនអាចទាញយក Account បានទេ។'; return; }
+                accounts = Array.isArray(result.accounts) ? result.accounts : [];
+                render();
+            });
+        };
+        const renderOwnerSettings = () => { if (!isOwner() || document.getElementById('owner-accounts')) return; const section = document.createElement('section'); section.className = 'view owner-only'; section.id = 'owner-accounts'; section.innerHTML = '<div class="layout"><div class="panel"><div class="panel-head"><div><h2>បង្កើត Admin account</h2><small>Owner តែម្នាក់អាចកំណត់ Username និង Password សម្រាប់ Admin</small></div></div><form class="login-form" id="owner-admin-form"><label>Admin username<input name="username" required autocomplete="off"></label><label class="password-field">Admin password<input name="password" type="password" required minlength="8" autocomplete="new-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><label class="password-field">បញ្ជាក់ Owner password<input name="ownerPassword" type="password" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><p class="login-error" id="owner-admin-error" aria-live="polite"></p><button class="btn" type="submit">បង្កើត Admin account</button></form></div><div class="panel"><div class="panel-head"><div><h2>បង្កើត Teacher account</h2><small>Owner អាចបង្កើត Username និង Password សម្រាប់ Teacher</small></div></div><form class="login-form" id="owner-user-form"><label>Teacher username<input name="username" required autocomplete="off"></label><label class="password-field">Teacher password<input name="password" type="password" required minlength="8" autocomplete="new-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><label class="password-field">បញ្ជាក់ Owner password<input name="creatorPassword" type="password" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><p class="login-error" id="owner-user-error" aria-live="polite"></p><button class="btn" type="submit">បង្កើត Teacher account</button></form></div></div>'; document.querySelector('main').append(section); renderOwnerAccountList(section); section.querySelector('#owner-admin-form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#owner-admin-error'); error.textContent = ''; const response = await fetch('/api/owner/admin-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានបង្កើត Admin account រួចរាល់។ អាច login ជា Admin បាន។' : (result.error || 'មិនអាចបង្កើតបានទេ។'); if (response.ok) event.currentTarget.reset(); }); section.querySelector('#owner-user-form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#owner-user-error'); error.textContent = ''; const payload = Object.fromEntries(new FormData(event.currentTarget)); payload.creatorRole = 'owner'; const response = await fetch('/api/managed-user-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានបង្កើត Teacher account រួចរាល់។ អាច login ជា Teacher បាន។' : (result.error || 'មិនអាចបង្កើតបានទេ។'); if (response.ok) event.currentTarget.reset(); }); };
         const renderOwnerPermissions = () => {
             if (!isOwner() || document.getElementById('owner-permissions')) return;
             const section = document.createElement('section');
             section.className = 'view owner-only';
             section.id = 'owner-permissions';
-            section.innerHTML = '<div class="panel"><div class="panel-head"><div><h2>កំណត់សិទ្ធិអ្នកប្រើ</h2><small>បើ Owner មិនធីកសិទ្ធិ អ្នកប្រើនឹងមិនឃើញ menu និងមិនអាចប្រើផ្នែកនោះបានទេ។</small></div><button class="btn ghost" id="load-permission-accounts" type="button">បង្ហាញឈ្មោះ Account</button></div><p class="login-error" id="permission-error" aria-live="polite"></p><div id="permission-accounts"></div></div>';
+            section.innerHTML = '<div class="panel"><div class="panel-head"><div><h2>កំណត់សិទ្ធិអ្នកប្រើ</h2><small>បើ Owner មិនធីកសិទ្ធិ អ្នកប្រើនឹងមិនឃើញ menu និងមិនអាចប្រើផ្នែកនោះបានទេ។</small></div><button class="btn ghost" id="load-permission-accounts" type="button">បង្ហាញឈ្មោះ Account</button></div><input class="account-search" id="permission-account-search" type="search" placeholder="ស្វែងរកតាម Username..." aria-label="ស្វែងរក account សម្រាប់កំណត់សិទ្ធិ"><p class="login-error" id="permission-error" aria-live="polite"></p><div class="account-list" id="permission-accounts"></div></div>';
             document.querySelector('main').append(section);
             const accountList = section.querySelector('#permission-accounts');
+            const search = section.querySelector('#permission-account-search');
             const error = section.querySelector('#permission-error');
+            search.addEventListener('input', () => accountList.querySelectorAll('.permission-account').forEach(form => {
+                form.hidden = !form.dataset.username.toLowerCase().includes(search.value.trim().toLowerCase());
+            }));
             section.querySelector('#load-permission-accounts').addEventListener('click', async () => {
                 error.textContent = '';
                 const ownerPassword = window.prompt('បញ្ចូល Owner password ដើម្បីបង្ហាញ Account');
@@ -796,6 +847,7 @@
                 const result = await response.json().catch(() => ({}));
                 if (!response.ok) { error.textContent = result.error || 'មិនអាចទាញយក Account បានទេ។'; return; }
                 accountList.innerHTML = result.accounts.map(account => `<form class="panel permission-account" data-username="${esc(account.username)}"><h3>${esc(account.username)} <small>(${account.role === 'admin' ? 'Admin' : 'Teacher'})</small></h3><div class="form-grid">${Object.entries(permissionLabels).map(([key, label]) => `<label><input type="checkbox" name="${key}" value="${key}"> ${label}</label>`).join('')}</div><button class="btn" type="submit">រក្សាទុកសិទ្ធិ</button></form>`).join('') || '<p class="empty">មិនទាន់មាន Admin ឬ Teacher account ទេ។</p>';
+                search.dispatchEvent(new Event('input'));
                 accountList.querySelectorAll('.permission-account').forEach(form => {
                     const username = form.dataset.username;
                     (userPermissions[username] || []).forEach(key => { const input = form.elements[key]; if (input) input.checked = true; });

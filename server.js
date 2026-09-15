@@ -88,6 +88,26 @@ app.post('/api/managed-accounts-list', async (request, response) => {
     }
 });
 
+app.post('/api/delete-managed-account', async (request, response) => {
+    const suppliedOwnerPassword = String(request.body?.ownerPassword || '');
+    const targetUsername = normalizeUsername(request.body?.targetUsername);
+    if (suppliedOwnerPassword !== ownerPassword) return response.status(401).json({ error: 'Owner authentication failed.' });
+    if (!targetUsername) return response.status(400).json({ error: 'Username ត្រូវបានទាមទារ។' });
+    try {
+        const account = await findManagedAccount(targetUsername);
+        if (!account) return response.status(404).json({ error: 'រកមិនឃើញ account នេះទេ។' });
+        const encodedUsername = encodeURIComponent(targetUsername);
+        await supabaseRequest(`managed_accounts?username=eq.${encodedUsername}`, {
+            method: 'DELETE',
+            headers: { Prefer: 'return=minimal' }
+        });
+        response.json({ ok: true });
+    } catch (error) {
+        console.error('Managed account deletion failed.', error);
+        response.status(503).json({ error: 'Account storage is unavailable. Please try again later.' });
+    }
+});
+
 app.post('/api/role-login', async (request, response) => {
     const username = normalizeUsername(request.body?.username);
     const password = String(request.body?.password || '');
