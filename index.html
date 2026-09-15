@@ -441,6 +441,11 @@
         .teacher-mode #delete-class, .teacher-mode #add-student-to-class { display: none !important; }
         .permission-hidden { display: none !important; }
         .account-search { max-width: 360px; margin: 0 0 16px; }
+        .permission-search { display: flex; gap: 8px; align-items: center; max-width: 520px; margin: 0 0 16px; }
+        .permission-search .account-search { flex: 1; margin: 0; }
+        .permission-password { display: flex; gap: 8px; align-items: end; max-width: 520px; margin: 0 0 16px; }
+        .permission-password label { flex: 1; }
+        .permission-password .btn { white-space: nowrap; }
         .account-list { display: grid; gap: 14px; }
         .account-list .panel { margin: 0; }
         .account-list .panel-head { align-items: center; }
@@ -798,7 +803,7 @@
         const renderOwnerAccountList = section => {
             const panel = document.createElement('div');
             panel.className = 'panel';
-            panel.innerHTML = '<div class="panel-head"><div><h2>គ្រប់គ្រង Account</h2><small>ស្វែងរក និងលុប Admin ឬ Teacher account ដែលមិនប្រើ។</small></div><button class="btn ghost" type="button" id="refresh-owner-accounts">បង្ហាញ Account</button></div><input class="account-search" id="owner-account-search" type="search" placeholder="ស្វែងរកតាម Username..." aria-label="ស្វែងរក account"><p class="login-error" id="owner-account-error" aria-live="polite"></p><div class="account-list" id="owner-account-list"><p class="empty">ចុច “បង្ហាញ Account” ដើម្បីទាញយកបញ្ជី។</p></div>';
+            panel.innerHTML = '<div class="panel-head"><div><h2>គ្រប់គ្រង Account</h2><small>ស្វែងរក និងលុប Admin ឬ Teacher account ដែលមិនប្រើ។</small></div></div><div class="permission-password"><label>Owner password<input id="owner-account-password" type="password" autocomplete="current-password" placeholder="បញ្ចូល Owner password"></label><button class="btn ghost" type="button" id="refresh-owner-accounts">បង្ហាញ Account</button></div><div class="permission-search"><input class="account-search" id="owner-account-search" type="search" placeholder="វាយ Username រួចចុច ស្វែងរក..." aria-label="ស្វែងរក account"><button class="btn ghost" id="search-owner-accounts" type="button">ស្វែងរក</button></div><p class="login-error" id="owner-account-error" aria-live="polite"></p><div class="account-list" id="owner-account-list"><p class="empty">បញ្ចូល Owner password រួចចុច “បង្ហាញ Account”។</p></div>';
             section.querySelector('.layout').append(panel);
             const list = panel.querySelector('#owner-account-list');
             const search = panel.querySelector('#owner-account-search');
@@ -825,9 +830,10 @@
                 }));
             };
             search.addEventListener('input', render);
+            panel.querySelector('#search-owner-accounts').addEventListener('click', render);
             panel.querySelector('#refresh-owner-accounts').addEventListener('click', async () => {
                 error.textContent = '';
-                ownerPassword = window.prompt('បញ្ចូល Owner password ដើម្បីបង្ហាញ Account') || '';
+                ownerPassword = panel.querySelector('#owner-account-password').value.trim();
                 if (!ownerPassword) return;
                 const response = await fetch('/api/managed-accounts-list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ownerPassword }) });
                 const result = await response.json().catch(() => ({}));
@@ -842,23 +848,25 @@
             const section = document.createElement('section');
             section.className = 'view owner-only';
             section.id = 'owner-permissions';
-            section.innerHTML = '<div class="panel"><div class="panel-head"><div><h2>កំណត់សិទ្ធិអ្នកប្រើ</h2><small>បើ Owner មិនធីកសិទ្ធិ អ្នកប្រើនឹងមិនឃើញ menu និងមិនអាចប្រើផ្នែកនោះបានទេ។</small></div><button class="btn ghost" id="load-permission-accounts" type="button">បង្ហាញឈ្មោះ Account</button></div><input class="account-search" id="permission-account-search" type="search" placeholder="ស្វែងរកតាម Username..." aria-label="ស្វែងរក account សម្រាប់កំណត់សិទ្ធិ"><p class="login-error" id="permission-error" aria-live="polite"></p><div class="account-list" id="permission-accounts"></div></div>';
+            section.innerHTML = '<div class="panel"><div class="panel-head"><div><h2>កំណត់សិទ្ធិអ្នកប្រើ</h2><small>បើ Owner មិនធីកសិទ្ធិ អ្នកប្រើនឹងមិនឃើញ menu និងមិនអាចប្រើផ្នែកនោះបានទេ។</small></div></div><div class="permission-password"><label>Owner password<input id="permission-owner-password" type="password" autocomplete="current-password" placeholder="បញ្ចូល Owner password"></label><button class="btn" id="load-permission-accounts" type="button">បង្ហាញ Account</button></div><div class="permission-search"><input class="account-search" id="permission-account-search" type="search" placeholder="វាយ Username រួចចុច ស្វែងរក..." aria-label="ស្វែងរក account សម្រាប់កំណត់សិទ្ធិ"><button class="btn ghost" id="search-permission-accounts" type="button">ស្វែងរក</button></div><p class="login-error" id="permission-error" aria-live="polite"></p><div class="account-list" id="permission-accounts"></div></div>';
             document.querySelector('main').append(section);
             const accountList = section.querySelector('#permission-accounts');
             const search = section.querySelector('#permission-account-search');
             const error = section.querySelector('#permission-error');
-            search.addEventListener('input', () => accountList.querySelectorAll('.permission-account').forEach(form => {
+            const renderPermissionSearch = () => accountList.querySelectorAll('.permission-account').forEach(form => {
                 form.hidden = !form.dataset.username.toLowerCase().includes(search.value.trim().toLowerCase());
-            }));
+            });
+            search.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); renderPermissionSearch(); } });
+            section.querySelector('#search-permission-accounts').addEventListener('click', renderPermissionSearch);
             section.querySelector('#load-permission-accounts').addEventListener('click', async () => {
                 error.textContent = '';
-                const ownerPassword = window.prompt('បញ្ចូល Owner password ដើម្បីបង្ហាញ Account');
+                const ownerPassword = section.querySelector('#permission-owner-password').value.trim();
                 if (!ownerPassword) return;
                 const response = await fetch('/api/managed-accounts-list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ownerPassword }) });
                 const result = await response.json().catch(() => ({}));
                 if (!response.ok) { error.textContent = result.error || 'មិនអាចទាញយក Account បានទេ។'; return; }
                 accountList.innerHTML = result.accounts.map(account => `<form class="panel permission-account" data-username="${esc(account.username)}"><h3>${esc(account.username)} <small>(${account.role === 'admin' ? 'Admin' : 'Teacher'})</small></h3><div class="form-grid">${Object.entries(permissionLabels).map(([key, label]) => `<label><input type="checkbox" name="${key}" value="${key}"> ${label}</label>`).join('')}</div><button class="btn" type="submit">រក្សាទុកសិទ្ធិ</button></form>`).join('') || '<p class="empty">មិនទាន់មាន Admin ឬ Teacher account ទេ។</p>';
-                search.dispatchEvent(new Event('input'));
+                renderPermissionSearch();
                 accountList.querySelectorAll('.permission-account').forEach(form => {
                     const username = form.dataset.username;
                     (userPermissions[username] || []).forEach(key => { const input = form.elements[key]; if (input) input.checked = true; });
