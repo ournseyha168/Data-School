@@ -898,7 +898,7 @@
         setLoginTheme(localStorage.getItem('seyha-login-theme') === 'dark' ? 'dark' : 'light');
         document.querySelectorAll('[data-auth-mode]').forEach(tab => tab.addEventListener('click', () => switchAuthMode(tab.dataset.authMode)));
         document.addEventListener('click', event => { const toggle = event.target.closest('[data-password-toggle]'); if (!toggle) return; const input = toggle.parentElement.querySelector('input[type="password"], input[type="text"]'); if (!input) return; const visible = input.type === 'text'; input.type = visible ? 'password' : 'text'; toggle.textContent = visible ? '◉' : '◌'; toggle.setAttribute('aria-label', visible ? 'Show password' : 'Hide password'); });
-        const roleLogin = async (form, errorElement) => { errorElement.textContent = ''; const submitButton = form.querySelector('button[type="submit"]'); const originalText = submitButton?.textContent || ''; if (submitButton) { submitButton.disabled = true; submitButton.setAttribute('aria-busy', 'true'); submitButton.textContent = 'កំពុងចូល...'; } try { const credentials = Object.fromEntries(new FormData(form)); const response = await fetch('/api/role-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(credentials), signal: AbortSignal.timeout(15000) }); if (!response.ok) { const result = await response.json().catch(() => ({})); errorElement.textContent = result.error || 'Username ឬ Password មិនត្រឹមត្រូវ។'; return; } const result = await response.json(); currentRole = result.role; sessionStorage.setItem('seyha-auth', 'true'); sessionStorage.setItem('seyha-role', currentRole); sessionStorage.setItem('seyha-username', credentials.username); unlock(); render(); setDataLoading(true); initializeRemoteStorage().finally(() => setDataLoading(false)); } catch (error) { console.error('Login request failed.', error); errorElement.textContent = error.name === 'TimeoutError' ? 'Server ឆ្លើយតបយឺតពេក។ សូមព្យាយាមម្ដងទៀត។' : 'មិនអាចភ្ជាប់ទៅ server បានទេ។ សូម Deploy server ហើយសាកល្បងម្ដងទៀត។'; } finally { if (submitButton) { submitButton.disabled = false; submitButton.removeAttribute('aria-busy'); submitButton.textContent = originalText; } } };
+        const roleLogin = async (form, errorElement) => { errorElement.textContent = ''; const submitButton = form.querySelector('button[type="submit"]'); const originalText = submitButton?.textContent || ''; if (submitButton) { submitButton.disabled = true; submitButton.setAttribute('aria-busy', 'true'); submitButton.textContent = 'កំពុងចូល...'; } try { const credentials = Object.fromEntries(new FormData(form)); const response = await fetch('/api/role-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(credentials), signal: AbortSignal.timeout(15000) }); if (!response.ok) { const result = await response.json().catch(() => ({})); errorElement.textContent = result.error || 'Username ឬ Password មិនត្រឹមត្រូវ។'; return; } const result = await response.json(); currentRole = result.role; sessionStorage.setItem('seyha-auth', 'true'); sessionStorage.setItem('seyha-role', currentRole); sessionStorage.setItem('seyha-username', credentials.username); unlock(); render(); setDataLoading(true); await initializeRemoteStorage(); render(); setDataLoading(false); } catch (error) { console.error('Login request failed.', error); errorElement.textContent = error.name === 'TimeoutError' ? 'Server ឆ្លើយតបយឺតពេក។ សូមព្យាយាមម្ដងទៀត។' : 'មិនអាចភ្ជាប់ទៅ server បានទេ។ សូម Deploy server ហើយសាកល្បងម្ដងទៀត។'; setDataLoading(false); } finally { if (submitButton) { submitButton.disabled = false; submitButton.removeAttribute('aria-busy'); submitButton.textContent = originalText; } } };
         adminLoginForm.addEventListener('submit', event => { event.preventDefault(); roleLogin(adminLoginForm, adminLoginError); });
         ownerLoginForm.addEventListener('submit', event => { event.preventDefault(); roleLogin(ownerLoginForm, ownerLoginError); });
         userLoginForm.addEventListener('submit', event => { event.preventDefault(); roleLogin(userLoginForm, userLoginError); });
@@ -945,21 +945,26 @@
         };
         const initializeRemoteStorage = async () => {
             try {
-                const response = await fetch('/api/storage', { signal: AbortSignal.timeout(10000) });
+                const response = await fetch(`/api/storage?ts=${Date.now()}`, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
                 if (!response.ok) throw new Error(`Cloud load failed with status ${response.status}`);
                 const result = await response.json();
                 const remoteData = result.data && typeof result.data === 'object' ? result.data : {};
                 const syncableRemoteEntries = Object.entries(remoteData).filter(([key]) => !['seyha-usd-khr-rate', 'seyha-usd-khr-updated-at', 'seyha-login-theme'].includes(key));
-                const remoteChanged = syncableRemoteEntries.some(([key, value]) => localStorage.getItem(key) !== String(value));
-                if (Object.keys(remoteData).length && remoteChanged) {
-                    syncableRemoteEntries.forEach(([key, value]) => localStorage.setItem(key, String(value)));
+                if (syncableRemoteEntries.length) {
+                    syncableRemoteEntries.forEach(([key, value]) => {
+                        const storedValue = typeof value === 'string' ? value : JSON.stringify(value);
+                        localStorage.setItem(key, storedValue);
+                    });
                     hydrateStoreFromLocalStorage();
                     normalizeClassMemberships();
+                    localStorage.setItem('seyha-classes', JSON.stringify(store.classes));
                     render();
                 }
                 if (!Object.keys(remoteData).length) syncRemoteStorage();
+                return true;
             } catch (error) {
                 console.warn('Cloud storage unavailable; continuing with local browser storage.', error);
+                return false;
             }
         };
         const checkCloudStatus = async () => {
