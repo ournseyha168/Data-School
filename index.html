@@ -810,9 +810,9 @@
             document.querySelectorAll('main .view[id]').forEach(view => view.classList.toggle('permission-hidden', !hasPermission(view.id) && !view.classList.contains('owner-only')));
         };
         const canManageClass = item => isOwner() || (isAdmin() && hasPermission('classes')) || (isViewer() && hasPermission('classes') && item?.ownerUsername === currentUsername());
-        const accessibleClasses = () => store.classes.filter(item => isOwner() || (isAdmin() && hasPermission('classes')) || (isViewer() && hasPermission('classes') && item.ownerUsername === currentUsername()));
+        const accessibleClasses = () => store.classes.filter(item => isOwner() || isAdmin() || isViewer());
         const accessibleStudentIds = () => new Set(accessibleClasses().flatMap(item => Array.isArray(item.studentIds) ? item.studentIds : []));
-        const accessibleStudents = () => isAdmin() ? store.students : store.students.filter(student => accessibleStudentIds().has(student.id));
+        const accessibleStudents = () => isAdmin() || isViewer() ? store.students : store.students.filter(student => accessibleStudentIds().has(student.id));
         const applyRole = () => { app.classList.toggle('teacher-mode', isViewer()); app.classList.toggle('viewer-mode', false); app.classList.toggle('owner-mode', isOwner()); document.getElementById('current-role').textContent = isOwner() ? 'Owner' : isAdmin() ? 'Admin' : isViewer() ? 'Teacher' : 'Teacher'; applyPermissions(); };
         const renderOwnerAccountList = section => {
             const panel = document.createElement('div');
@@ -958,7 +958,9 @@
                     hydrateStoreFromLocalStorage();
                     normalizeClassMemberships();
                     localStorage.setItem('seyha-classes', JSON.stringify(store.classes));
+                    applyPermissions();
                     render();
+                    window.refreshSchoolModules?.();
                 }
                 if (!Object.keys(remoteData).length) syncRemoteStorage();
                 return true;
@@ -1997,6 +1999,7 @@
     const baseRenderModule = renderModule;
     renderModule = (id, fields, columns) => { baseRenderModule(id, fields, columns); if (id === 'fees') addFeeActionsAndDueStatus(columns); };
     Object.entries(configs).forEach(([id,c])=>{makePanel(id,c.heading,c.fields,c.columns); renderModule(id,c.fields,c.columns);});
+    window.refreshSchoolModules = () => Object.entries(configs).forEach(([id, config]) => renderModule(id, config.fields, config.columns));
     document.getElementById('fees-filter')?.addEventListener('input', () => renderModule('fees', configs.fees.fields, configs.fees.columns));
     document.getElementById('refresh-fees-rate')?.addEventListener('click', loadFeeRate);
     renderFeeRate();
