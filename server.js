@@ -12,7 +12,8 @@ let exchangeRateCache = null;
 const exchangeRateCacheTtlMs = 60 * 60 * 1000;
 let storageCache = null;
 let storageCacheAt = 0;
-const storageCacheTtlMs = 30 * 1000;
+// Reads must always reach Supabase so a newly saved record is visible after login.
+const storageCacheTtlMs = 0;
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('.'));
@@ -224,6 +225,7 @@ const supabaseStorageUpload = async (key, data, contentType = 'application/octet
 };
 
 app.get('/api/storage', async (_request, response) => {
+    response.set('Cache-Control', 'no-store');
     if (storageCache && Date.now() - storageCacheAt < storageCacheTtlMs) {
         response.json({ data: storageCache });
         return;
