@@ -263,18 +263,22 @@ app.post('/api/inventory-sync', async (request, response) => {
         response.status(401).json({ error: 'Excel sync token is invalid or not configured.' });
         return;
     }
-    const incomingItems = request.body?.items;
+    const incomingItems = Array.isArray(request.body?.items)
+        ? request.body.items
+        : request.body?.name || request.body?.materialName
+            ? [request.body]
+            : null;
     if (!Array.isArray(incomingItems)) {
-        response.status(400).json({ error: 'items must be an array.' });
+        response.status(400).json({ error: 'Request must include items array or a material row with name.' });
         return;
     }
     const cleanItems = incomingItems
         .map(item => ({
             id: String(item?.id || '').trim(),
-            name: String(item?.name || '').trim(),
-            variant: String(item?.variant || '').trim() || '-',
-            received: Math.max(0, Number(item?.received) || 0),
-            issued: Math.max(0, Number(item?.issued) || 0),
+            name: String(item?.name || item?.materialName || '').trim(),
+            variant: String(item?.variant || item?.type || item?.category || '').trim() || '-',
+            received: Math.max(0, Number(item?.received ?? item?.available ?? item?.stockIn) || 0),
+            issued: Math.max(0, Number(item?.issued ?? item?.outgoing ?? item?.stockOut) || 0),
             note: String(item?.note || '').trim(),
             updatedAt: item?.updatedAt || new Date().toISOString()
         }))
@@ -284,11 +288,15 @@ app.post('/api/inventory-sync', async (request, response) => {
         return;
     }
     try {
-        const rows = await supabaseRequest('school_storage?id=eq.main&select=data&limit=1');
+            const rows = await supabaseRequest('school_storage?id=eq.main&select=data&limit=1');
         const data = rows[0]?.data && typeof rows[0].data === 'object' ? rows[0].data : {};
-        const existingItems = Array.isArray(JSON.parse(data['seyha-material-inventory'] || '[]'))
-            ? JSON.parse(data['seyha-material-inventory'])
-            : [];
+            let existingItems = [];
+            try {
+                const parsed = JSON.parse(data['seyha-material-inventory'] || '[]');
+                existingItems = Array.isArray(parsed) ? parsed : [];
+            } catch (parseError) {
+                console.warn('Stored inventory data was invalid; replacing it.', parseError);
+            }
         const merged = [...existingItems];
         cleanItems.forEach(item => {
             const index = merged.findIndex(existing => existing.name === item.name && existing.variant === item.variant);

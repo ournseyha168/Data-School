@@ -2148,7 +2148,12 @@
     const search = section.querySelector('#inventory-search');
     const render = () => {
         const query = search.value.trim().toLowerCase();
-        const visible = inventory.filter(item => `${item.name} ${item.variant} ${item.note}`.toLowerCase().includes(query));
+        const visible = inventory
+            .filter(item => `${item.name} ${item.variant} ${item.note}`.toLowerCase().includes(query))
+            .sort((a, b) => {
+                const nameOrder = String(a.name || '').localeCompare(String(b.name || ''), 'km');
+                return nameOrder || String(a.variant || '').localeCompare(String(b.variant || ''), 'en', { numeric: true });
+            });
         rows.textContent = '';
         const groupedNames = new Map();
         visible.forEach(item => groupedNames.set(item.name, (groupedNames.get(item.name) || 0) + 1));
