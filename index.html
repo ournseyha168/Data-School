@@ -2193,11 +2193,11 @@
             const variantCell = document.createElement('td');
             variantCell.textContent = item.variant;
             tr.append(variantCell);
-            const available = Math.max(Number(item.received || 0) - Number(item.issued || 0), 0);
-            [available, Number(item.issued || 0), Number(item.todayIssued || 0)].forEach(value => {
+            const notIssued = Math.max(Number(item.received || 0), 0);
+            [notIssued, Number(item.issued || 0), Number(item.todayIssued || 0)].forEach(value => {
                 const td = document.createElement('td'); td.textContent = value; tr.append(td);
             });
-            const remaining = Math.max(available - Number(item.todayIssued || 0), 0);
+            const remaining = Math.max(notIssued - Number(item.issued || 0) - Number(item.todayIssued || 0), 0);
             const balanceCell = document.createElement('td'); balanceCell.textContent = remaining; balanceCell.className = `stock-balance${remaining === 0 ? ' stock-warning' : ''}`; tr.append(balanceCell);
             const updatedCell = document.createElement('td'); updatedCell.textContent = item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : '-'; tr.append(updatedCell);
             const actions = document.createElement('td'); actions.className = 'module-actions';
@@ -2212,7 +2212,7 @@
         });
         if (!visible.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 8; td.className = 'module-empty'; td.textContent = 'មិនមានទិន្នន័យ'; tr.append(td); rows.append(tr); }
         section.querySelector('#inventory-types').textContent = inventory.length;
-        section.querySelector('#inventory-received').textContent = inventory.reduce((sum, item) => sum + Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), 0).toLocaleString();
+        section.querySelector('#inventory-received').textContent = inventory.reduce((sum, item) => sum + Math.max(Number(item.received || 0), 0), 0).toLocaleString();
         section.querySelector('#inventory-balance').textContent = inventory.reduce((sum, item) => sum + Math.max(Number(item.received || 0) - Number(item.issued || 0) - Number(item.todayIssued || 0), 0), 0).toLocaleString();
         section.querySelector('#inventory-count').textContent = `${visible.length} កំណត់ត្រា`;
     };
@@ -2271,8 +2271,11 @@
             const todayIssuedIndex = findColumn(headers, ['ដកថ្ងៃនេះ', 'ចំនួនដកថ្ងៃនេះ', 'today issued', 'todayout']);
             const noteIndex = findColumn(headers, ['សម្គាល់', 'note', 'remark']);
             let imported = 0;
+            let lastMaterialName = '';
             matrix.slice(headerIndex + 1).forEach(row => {
-                const name = String(row[nameIndex] || '').trim();
+                const nameCell = String(row[nameIndex] || '').trim();
+                if (nameCell) lastMaterialName = nameCell;
+                const name = lastMaterialName;
                 if (!name) return;
                 const variant = String(row[variantIndex] || '').trim() || '-';
                 const existing = inventory.find(item => item.name === name && item.variant === variant);
@@ -2309,8 +2312,8 @@
     section.querySelector('#inventory-export').addEventListener('click', () => {
         const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'មិនទាន់ដក', 'ចេញសរុប', 'ដកថ្ងៃនេះ', 'នៅសល់', 'បាន update នៅ'];
         const lines = [header, ...inventory.map((item, index) => {
-        const available = Math.max(Number(item.received || 0) - Number(item.issued || 0), 0);
-        return [index + 1, item.name, item.variant, available, item.issued, item.todayIssued || 0, Math.max(available - Number(item.todayIssued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''];
+        const notIssued = Math.max(Number(item.received || 0), 0);
+        return [index + 1, item.name, item.variant, notIssued, item.issued, item.todayIssued || 0, Math.max(notIssued - Number(item.issued || 0) - Number(item.todayIssued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''];
         })];
         if (!window.XLSX) { notify('មិនអាច load Excel export បានទេ។', 'error'); return; }
         const worksheet = XLSX.utils.aoa_to_sheet(lines);
@@ -2333,8 +2336,8 @@
         if (localStorage.getItem(snapshotKey) === snapshotDate) return;
         const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'មិនទាន់ដក', 'ចេញសរុប', 'ដកថ្ងៃនេះ', 'នៅសល់', 'បាន update នៅ'];
         const lines = [header, ...inventory.map((item, index) => {
-            const available = Math.max(Number(item.received || 0) - Number(item.issued || 0), 0);
-            return [index + 1, item.name, item.variant, available, item.issued, item.todayIssued || 0, Math.max(available - Number(item.todayIssued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''];
+            const notIssued = Math.max(Number(item.received || 0), 0);
+            return [index + 1, item.name, item.variant, notIssued, item.issued, item.todayIssued || 0, Math.max(notIssued - Number(item.issued || 0) - Number(item.todayIssued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''];
         })];
         if (window.XLSX) {
             const worksheet = XLSX.utils.aoa_to_sheet(lines);
