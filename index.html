@@ -157,8 +157,8 @@
             stroke-linejoin: round;
             stroke-width: 1.8;
         }
-        .password-toggle [data-ui-icon] { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; }
-        .password-toggle [data-ui-icon] svg { width:20px; height:20px; }
+        .password-toggle [data-ui-icon] { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; }
+        .password-toggle [data-ui-icon] svg { width:15px; height:15px; }
         .password-toggle svg,
         .password-toggle svg path,
         .password-toggle svg circle { fill:none !important; stroke:currentColor !important; stroke-width:1.8 !important; }
@@ -334,12 +334,14 @@
         .login-form input { margin-top: 7px; width: 100%; padding: 13px 14px; color: #18243b; border: 1px solid #dbe3ef; border-radius: 9px; background: #fff; outline: none; }
         .login-form input:hover, .login-form input:focus { border-color: #4b75cf; box-shadow: 0 0 0 3px rgba(75,117,207,.12); }
         .password-field { position: relative; }
-        .password-field input { padding-right: 48px; }
+        .password-field input { padding-right: 44px; }
         .password-field input::-ms-reveal,
         .password-field input::-ms-clear { display:none; width:0; height:0; }
         .password-field input::-webkit-credentials-auto-fill-button,
         .password-field input::-webkit-textfield-decoration-container { visibility:hidden; pointer-events:none; }
-        .password-toggle { position: absolute; right: 10px; bottom: 9px; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 7px; color: #71809a; background: transparent; }
+        .password-toggle { position:absolute; top:calc(50% + 14px); right:9px; display:inline-flex !important; align-items:center; justify-content:center; width:24px; height:24px; padding:0; border:0; border-radius:6px; color:#71809a; background:transparent; transform:translateY(-50%); opacity:0; pointer-events:none; transition:opacity .15s ease; }
+        .password-field.password-has-value .password-toggle { opacity:1; pointer-events:auto; }
+        .password-toggle:hover { color:#315dbe; background:#eef3f8; }
         .password-toggle:hover { color: #315dbe; background: #eef3f8; }
         .login-form .btn { padding: 13px; border-radius: 9px; color: #fff; background: #315dbe; box-shadow: 0 9px 18px rgba(49,93,190,.18); }
         .login-form .btn:hover { background: #244da8; transform: translateY(-1px); }
@@ -1126,6 +1128,8 @@
         loginThemeToggle.addEventListener('click', () => setLoginTheme(loginScreen.classList.contains('theme-dark') ? 'light' : 'dark'));
         setLoginTheme(localStorage.getItem('seyha-login-theme') === 'dark' ? 'dark' : 'light');
         document.querySelectorAll('[data-auth-mode]').forEach(tab => tab.addEventListener('click', () => switchAuthMode(tab.dataset.authMode)));
+        const updatePasswordToggle = input => { const field = input.closest('.password-field'); if (field) field.classList.toggle('password-has-value', input.value.length > 0); };
+        document.querySelectorAll('.password-field input').forEach(input => { updatePasswordToggle(input); input.addEventListener('input', () => updatePasswordToggle(input)); });
         document.addEventListener('click', event => { const toggle = event.target.closest('[data-password-toggle]'); if (!toggle) return; const input = toggle.parentElement.querySelector('input[type="password"], input[type="text"]'); if (!input) return; const visible = input.type === 'text'; input.type = visible ? 'password' : 'text'; toggle.setAttribute('aria-label', visible ? 'Show password' : 'Hide password'); });
         const roleLogin = async (form, errorElement) => { errorElement.textContent = ''; const submitButton = form.querySelector('button[type="submit"]'); const originalText = submitButton?.textContent || ''; if (submitButton) { submitButton.disabled = true; submitButton.setAttribute('aria-busy', 'true'); submitButton.textContent = 'កំពុងចូល...'; } try { const credentials = Object.fromEntries(new FormData(form)); const response = await fetch('/api/role-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(credentials), signal: AbortSignal.timeout(15000) }); if (!response.ok) { const result = await response.json().catch(() => ({})); errorElement.textContent = result.error || 'Username ឬ Password មិនត្រឹមត្រូវ។'; return; } const result = await response.json(); currentRole = result.role; sessionStorage.setItem('seyha-auth', 'true'); sessionStorage.setItem('seyha-role', currentRole); sessionStorage.setItem('seyha-username', credentials.username); unlock(); render(); setDataLoading(true); await initializeRemoteStorage(); render(); setDataLoading(false); } catch (error) { console.error('Login request failed.', error); errorElement.textContent = error.name === 'TimeoutError' ? 'Server ឆ្លើយតបយឺតពេក។ សូមព្យាយាមម្ដងទៀត។' : 'មិនអាចភ្ជាប់ទៅ server បានទេ។ សូម Deploy server ហើយសាកល្បងម្ដងទៀត។'; setDataLoading(false); } finally { if (submitButton) { submitButton.disabled = false; submitButton.removeAttribute('aria-busy'); submitButton.textContent = originalText; } } };
         adminLoginForm.addEventListener('submit', event => { event.preventDefault(); roleLogin(adminLoginForm, adminLoginError); });
