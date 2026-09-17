@@ -159,6 +159,9 @@
         }
         .password-toggle [data-ui-icon] { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; }
         .password-toggle [data-ui-icon] svg { width:20px; height:20px; }
+        .password-toggle svg,
+        .password-toggle svg path,
+        .password-toggle svg circle { fill:none !important; stroke:currentColor !important; stroke-width:1.8 !important; }
         /* Platform-aware icons: Android gets Material-like outlines, Apple gets
            the compact filled/rounded language users know from SF Symbols. */
         html.platform-android .nav-icon svg,
@@ -2661,7 +2664,7 @@
                 moon: '<path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5z"/>',
                 eye: '<path d="M2.5 12s3.3-5 9.5-5 9.5 5 9.5 5-3.3 5-9.5 5-9.5-5-9.5-5z"/><circle cx="12" cy="12" r="2.2"/>'
             };
-            const icon = name => paths[name] ? `<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">${paths[name]}</svg>` : '';
+            const icon = name => paths[name] ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">${paths[name]}</svg>` : '';
             document.querySelectorAll('[data-icon], [data-ui-icon]').forEach(element => {
                 const name = element.dataset.icon || element.dataset.uiIcon;
                 if (icon(name)) element.innerHTML = icon(name);
