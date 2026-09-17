@@ -2050,5 +2050,146 @@
     const studentForm=document.getElementById('student-form'); document.addEventListener('click',e=>{if(!e.target.classList.contains('edit-student'))return;const s=store.students.find(x=>x.id===e.target.dataset.id);if(!s)return;['studentId','guardianName','guardianPhone','address','status','enrollmentDate'].forEach(k=>{if(studentForm.elements[k])studentForm.elements[k].value=s[k]||'';});});
 })();
 </script>
+<script>
+(() => {
+    const inventoryKey = 'seyha-material-inventory';
+    const initialInventory = [
+        { name: 'ឯកសណ្ឋានកីឡាសិស្សប្រុស', variant: 'M', received: 0, issued: 0, note: '' },
+        { name: 'ឯកសណ្ឋានកីឡាសិស្សប្រុស', variant: 'S', received: 2, issued: 1, note: '' },
+        { name: 'ឯកសណ្ឋានកីឡាសិស្សប្រុស', variant: 'L', received: 0, issued: 0, note: '' },
+        { name: 'ឯកសណ្ឋានកីឡាសិស្សប្រុស', variant: 'XL', received: 0, issued: 0, note: '' },
+        { name: 'ឯកសណ្ឋានកីឡាសិស្សប្រុស', variant: '2XL', received: 11, issued: 0, note: '' },
+        { name: 'ឯកសណ្ឋានកីឡាសិស្សប្រុស', variant: '3XL', received: 12, issued: 0, note: '' },
+        { name: 'ឯកសណ្ឋានកីឡាសិស្សស្រី', variant: 'M', received: 1, issued: 0, note: '' },
+        { name: 'ឯកសណ្ឋានកីឡាសិស្សស្រី', variant: 'S', received: 9, issued: 0, note: '' },
+        { name: 'ឯកសណ្ឋានកីឡាសិស្សស្រី', variant: 'L', received: 5, issued: 0, note: '' },
+        { name: 'ឯកសណ្ឋានកីឡាសិស្សស្រី', variant: 'XL', received: 5, issued: 0, note: '' },
+        { name: 'ឯកសណ្ឋានកីឡាសិស្សស្រី', variant: '2XL', received: 2, issued: 0, note: '' },
+        { name: 'ឯកសណ្ឋានកីឡាសិស្សស្រី', variant: '3XL', received: 14, issued: 0, note: '' }
+    ].map((item, index) => ({ ...item, id: `material-${index + 1}` }));
+
+    const readInventory = () => {
+        try {
+            const saved = JSON.parse(localStorage.getItem(inventoryKey) || 'null');
+            return Array.isArray(saved) ? saved : initialInventory;
+        } catch (error) {
+            console.warn('Unable to read material inventory.', error);
+            return initialInventory;
+        }
+    };
+    let inventory = readInventory();
+    const saveInventory = () => localStorage.setItem(inventoryKey, JSON.stringify(inventory));
+
+    const style = document.createElement('style');
+    style.textContent = `
+        #inventory .inventory-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:16px 0; }
+        #inventory .inventory-summary .card { min-height:0; }
+        #inventory .inventory-toolbar { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:14px; }
+        #inventory .inventory-toolbar input { min-width:230px; flex:1; }
+        #inventory .inventory-table th, #inventory .inventory-table td { text-align:center; vertical-align:middle; }
+        #inventory .inventory-table th:nth-child(2), #inventory .inventory-table td:nth-child(2),
+        #inventory .inventory-table th:last-child, #inventory .inventory-table td:last-child { text-align:left; }
+        #inventory .inventory-table .stock-balance { font-weight:700; color:#67d8e8; }
+        #inventory .inventory-table .stock-warning { color:#ff9e9e; }
+        #inventory .inventory-form { margin-bottom:16px; }
+        @media (max-width:680px) { #inventory .inventory-summary { grid-template-columns:1fr; } #inventory .inventory-toolbar input { min-width:100%; } }
+    `;
+    document.head.append(style);
+
+    const nav = document.querySelector('.nav');
+    const main = document.querySelector('main');
+    if (!nav || !main) return;
+    const navButton = document.createElement('button');
+    navButton.dataset.view = 'inventory';
+    navButton.innerHTML = '<span class="nav-icon">▦</span><span>ស្តុកសម្ភារៈ</span>';
+    nav.append(navButton);
+
+    const section = document.createElement('section');
+    section.className = 'view';
+    section.id = 'inventory';
+    section.innerHTML = `
+        <div class="panel">
+            <div class="panel-head">
+                <div><h2>ស្តុកសម្ភារៈ</h2><p class="sub">តារាងគ្រប់គ្រងសម្ភារៈ តាមទម្រង់ Excel</p></div>
+                <button class="btn ghost" type="button" id="inventory-export">នាំចេញ CSV</button>
+            </div>
+            <form class="inventory-form form-grid" id="inventory-form">
+                <label>ឈ្មោះសម្ភារៈ<input name="name" required placeholder="ឧ. ឯកសណ្ឋានកីឡា"></label>
+                <label>ប្រភេទ/ទំហំ<input name="variant" required placeholder="ឧ. M ឬ សៀវភៅ"></label>
+                <label>ចំនួនបញ្ចូល<input name="received" type="number" min="0" step="1" value="0" required></label>
+                <label>ចំនួនបញ្ចេញ<input name="issued" type="number" min="0" step="1" value="0" required></label>
+                <label>សម្គាល់<input name="note" placeholder="សម្គាល់បន្ថែម"></label>
+                <div class="form-actions"><button class="btn" type="submit">បន្ថែមសម្ភារៈ</button><button class="btn ghost" type="reset">សម្អាត</button></div>
+            </form>
+            <div class="inventory-summary">
+                <div class="card"><span class="label">ប្រភេទសម្ភារៈ</span><div class="number" id="inventory-types">0</div></div>
+                <div class="card"><span class="label">ចំនួនបញ្ចូលសរុប</span><div class="number" id="inventory-received">0</div></div>
+                <div class="card"><span class="label">ស្តុកសល់សរុប</span><div class="number" id="inventory-balance">0</div></div>
+            </div>
+            <div class="inventory-toolbar"><input id="inventory-search" type="search" placeholder="ស្វែងរកឈ្មោះ ឬប្រភេទ/ទំហំ..."><span class="muted" id="inventory-count"></span></div>
+            <div class="table-wrap"><table class="module-table inventory-table">
+                <thead><tr><th>ល.រ</th><th>ឈ្មោះសម្ភារៈ</th><th>ប្រភេទ/ទំហំ</th><th>ចំនួនបញ្ចូល</th><th>ចំនួនបញ្ចេញ</th><th>ស្តុកសល់</th><th>សម្គាល់</th><th>សកម្មភាព</th></tr></thead>
+                <tbody id="inventory-rows"></tbody>
+            </table></div>
+        </div>`;
+    main.append(section);
+
+    const form = section.querySelector('#inventory-form');
+    const rows = section.querySelector('#inventory-rows');
+    const search = section.querySelector('#inventory-search');
+    const render = () => {
+        const query = search.value.trim().toLowerCase();
+        const visible = inventory.filter(item => `${item.name} ${item.variant} ${item.note}`.toLowerCase().includes(query));
+        rows.textContent = '';
+        visible.forEach((item, index) => {
+            const balance = Math.max(Number(item.received || 0) - Number(item.issued || 0), 0);
+            const tr = document.createElement('tr');
+            [index + 1, item.name, item.variant, Number(item.received || 0), Number(item.issued || 0)].forEach(value => {
+                const td = document.createElement('td'); td.textContent = value; tr.append(td);
+            });
+            const balanceCell = document.createElement('td'); balanceCell.textContent = balance; balanceCell.className = `stock-balance${balance === 0 ? ' stock-warning' : ''}`; tr.append(balanceCell);
+            const noteCell = document.createElement('td'); noteCell.textContent = item.note || '-'; tr.append(noteCell);
+            const actions = document.createElement('td'); actions.className = 'module-actions';
+            const edit = document.createElement('button'); edit.className = 'btn ghost'; edit.type = 'button'; edit.textContent = 'កែប្រែ';
+            edit.addEventListener('click', () => {
+                Object.entries(item).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value; });
+                form.dataset.editId = item.id; form.querySelector('button[type="submit"]').textContent = 'រក្សាទុកការកែប្រែ'; form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+            const remove = document.createElement('button'); remove.className = 'btn danger'; remove.type = 'button'; remove.textContent = 'លុប';
+            remove.addEventListener('click', () => { inventory = inventory.filter(row => row.id !== item.id); saveInventory(); render(); });
+            actions.append(edit, remove); tr.append(actions); rows.append(tr);
+        });
+        if (!visible.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 8; td.className = 'module-empty'; td.textContent = 'មិនមានទិន្នន័យ'; tr.append(td); rows.append(tr); }
+        section.querySelector('#inventory-types').textContent = inventory.length;
+        section.querySelector('#inventory-received').textContent = inventory.reduce((sum, item) => sum + Number(item.received || 0), 0).toLocaleString();
+        section.querySelector('#inventory-balance').textContent = inventory.reduce((sum, item) => sum + Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), 0).toLocaleString();
+        section.querySelector('#inventory-count').textContent = `${visible.length} កំណត់ត្រា`;
+    };
+    form.addEventListener('submit', event => {
+        event.preventDefault();
+        const data = Object.fromEntries(new FormData(form));
+        data.received = Number(data.received || 0); data.issued = Number(data.issued || 0);
+        const editId = form.dataset.editId;
+        if (editId) inventory = inventory.map(item => item.id === editId ? { ...item, ...data } : item);
+        else inventory.push({ ...data, id: `material-${Date.now()}` });
+        saveInventory(); form.reset(); delete form.dataset.editId; form.querySelector('button[type="submit"]').textContent = 'បន្ថែមសម្ភារៈ'; render();
+    });
+    form.addEventListener('reset', () => { delete form.dataset.editId; setTimeout(() => { form.querySelector('button[type="submit"]').textContent = 'បន្ថែមសម្ភារៈ'; }, 0); });
+    search.addEventListener('input', render);
+    section.querySelector('#inventory-export').addEventListener('click', () => {
+        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ/ទំហំ', 'ចំនួនបញ្ចូល', 'ចំនួនបញ្ចេញ', 'ស្តុកសល់', 'សម្គាល់'];
+        const lines = [header, ...inventory.map((item, index) => [index + 1, item.name, item.variant, item.received, item.issued, Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), item.note || ''])];
+        const csv = '\uFEFF' + lines.map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\n');
+        const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); link.download = 'stock-materials.csv'; link.click(); URL.revokeObjectURL(link.href);
+    });
+    const showInventory = () => {
+        document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view === section));
+        document.querySelectorAll('.nav button').forEach(button => button.classList.toggle('active', button === navButton));
+        const title = document.getElementById('page-title'); if (title) title.textContent = 'ស្តុកសម្ភារៈ';
+    };
+    navButton.addEventListener('click', showInventory);
+    render();
+})();
+</script>
 </body>
 </html>
