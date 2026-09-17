@@ -16,7 +16,12 @@ let storageCacheAt = 0;
 // Reads must always reach Supabase so a newly saved record is visible after login.
 const storageCacheTtlMs = 0;
 
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({
+    limit: '50mb',
+    verify: (request, _response, buffer) => {
+        request.rawBody = buffer.toString('utf8');
+    }
+}));
 app.use(express.static('.'));
 
 app.get('/api/health', (_request, response) => {
@@ -279,7 +284,6 @@ app.post('/api/inventory-sync', async (request, response) => {
             variant: String(item?.variant || item?.type || item?.category || '').trim() || '-',
             received: Math.max(0, Number(item?.received ?? item?.available ?? item?.stockIn) || 0),
             issued: Math.max(0, Number(item?.issued ?? item?.outgoing ?? item?.stockOut) || 0),
-            todayIssued: Math.max(0, Number(item?.todayIssued ?? item?.todayOut) || 0),
             note: String(item?.note || '').trim(),
             updatedAt: item?.updatedAt || new Date().toISOString()
         }))
@@ -335,7 +339,7 @@ app.post('/api/upload', async (request, response) => {
 app.use((error, _request, response, next) => {
     if (error?.type === 'entity.parse.failed') {
         response.status(400).json({
-            error: 'Excel sent invalid JSON. Check quotes, line breaks, and special characters in the cells.'
+            error: `Excel sent invalid JSON: ${error.message}`
         });
         return;
     }
