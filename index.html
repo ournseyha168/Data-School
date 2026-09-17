@@ -1754,7 +1754,7 @@
     .module-table th,.module-table td { padding:10px 9px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
     .module-table th { color:var(--muted); font-size:12px; font-weight:600; }
     .module-empty { padding:24px; color:var(--muted); text-align:center; }
-    .module-table .module-actions { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:nowrap; white-space:nowrap; }
+    .module-table .module-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:center; gap:6px; min-width:136px; white-space:nowrap; }
     .fee-due-soon { color: var(--orange); font-weight: 700; }
     .fee-overdue { color: var(--danger); font-weight: 700; }
     .fee-paid { color: var(--green); font-weight: 700; }
@@ -2103,8 +2103,8 @@
         #inventory .inventory-summary .card { min-height:0; }
         #inventory .inventory-toolbar { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:14px; }
         #inventory .inventory-toolbar input { min-width:230px; flex:1; }
-        #inventory .table-wrap { overflow-x:auto; border-radius:10px; }
-        #inventory .inventory-table { width:100%; min-width:1060px; table-layout:fixed; background:#fff; color:#111; border:1px solid #222; }
+        #inventory .table-wrap { width:100%; overflow-x:auto; border-radius:10px; }
+        #inventory .inventory-table { width:100%; min-width:980px; table-layout:fixed; background:#fff; color:#111; border:1px solid #222; }
         #inventory .inventory-table th, #inventory .inventory-table td { text-align:center; vertical-align:middle; color:#111; border:1px solid #777; background:#fff; height:42px; padding:8px 6px; line-height:1.35; word-break:break-word; }
         #inventory .inventory-table th:nth-child(1), #inventory .inventory-table td:nth-child(1) { width:6%; }
         #inventory .inventory-table th:nth-child(2), #inventory .inventory-table td:nth-child(2) { width:22%; }
@@ -2113,11 +2113,11 @@
         #inventory .inventory-table th:nth-child(5), #inventory .inventory-table td:nth-child(5),
         #inventory .inventory-table th:nth-child(6), #inventory .inventory-table td:nth-child(6) { width:10%; }
         #inventory .inventory-table th:nth-child(7), #inventory .inventory-table td:nth-child(7) { width:16%; }
-        #inventory .inventory-table th:nth-child(8), #inventory .inventory-table td:nth-child(8) { width:16%; min-width:150px; }
+        #inventory .inventory-table th:nth-child(8), #inventory .inventory-table td:nth-child(8) { width:15%; min-width:136px; }
         #inventory .inventory-table th:nth-child(2), #inventory .inventory-table td:nth-child(2) { text-align:center; }
         #inventory .inventory-table th:last-child, #inventory .inventory-table td:last-child { text-align:center; }
-        #inventory .inventory-table td.module-actions { padding:6px 8px; }
-        #inventory .inventory-table .module-actions .btn { flex:0 0 auto; min-width:62px; padding:8px 10px; white-space:nowrap; }
+        #inventory .inventory-table td.module-actions { padding:6px; }
+        #inventory .inventory-table .module-actions .btn { width:100%; min-width:0; padding:8px 4px; white-space:nowrap; }
         #inventory .inventory-table th, #inventory .inventory-table td { white-space:normal; }
         #inventory .inventory-table th { font-weight:700; text-align:center; background:#f1f1f1; }
         #inventory .inventory-table tbody tr:hover td { background:#f8fbff; }
