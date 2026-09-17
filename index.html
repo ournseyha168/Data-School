@@ -136,7 +136,46 @@
             box-shadow: inset 3px 0 0 var(--cyan), 0 8px 22px rgba(0,0,0,.08);
         }
         .nav button:not(.active):hover { background: linear-gradient(135deg, rgba(103,216,232,.11), rgba(145,169,255,.08)); }
-        .nav-icon { width: 21px; text-align: center; color: var(--cyan); }
+        .nav-icon {
+            display: inline-flex;
+            flex: 0 0 21px;
+            width: 21px;
+            height: 21px;
+            align-items: center;
+            justify-content: center;
+            color: var(--cyan);
+            line-height: 1;
+        }
+        .nav-icon svg, [data-ui-icon] svg {
+            display: block;
+            width: 1.15em;
+            height: 1.15em;
+            overflow: visible;
+            fill: none !important;
+            stroke: currentColor !important;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-width: 1.8;
+        }
+        .password-toggle [data-ui-icon] { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; }
+        .password-toggle [data-ui-icon] svg { width:20px; height:20px; }
+        /* Platform-aware icons: Android gets Material-like outlines, Apple gets
+           the compact filled/rounded language users know from SF Symbols. */
+        html.platform-android .nav-icon svg,
+        html.platform-android [data-ui-icon] svg { stroke-width: 2.1; }
+        html.platform-apple .nav-icon svg,
+        html.platform-apple [data-ui-icon] svg {
+            /* SF Symbols are optically heavier and more rounded than Material
+               outlines; keep the SVG accessible while matching that weight. */
+            stroke-width: 2.45;
+        }
+        .login-theme-toggle, .password-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+        [data-ui-icon] svg { width: 1.05em; height: 1.05em; flex: 0 0 auto; }
         .side-note { margin: 80px 8px 0; padding: 14px; border: 1px solid rgba(159,123,255,.22); border-radius: 14px; color: var(--muted); font-size: 12px; line-height: 1.7; background: rgba(159,123,255,.07); }
         main { min-width: 0; min-height: 0; overflow-y: auto; padding: 30px clamp(18px, 4vw, 52px); }
         .topbar { display: flex; justify-content: space-between; align-items: start; gap: 20px; margin-bottom: 28px; }
@@ -655,6 +694,189 @@
         .login-screen.theme-dark .password-toggle:hover { color: #67d8e8; background: rgba(103,216,232,.12); }
         .login-screen.theme-dark .login-help { color: #9aaac1; background: rgba(84,232,255,.06); }
         .login-screen.theme-dark .auth-visual { background: linear-gradient(145deg, #12285f 0%, #20558e 52%, #3b899e 100%); }
+
+        /* Responsive usability refinements: preserve the desktop system while making
+           dense school-management screens easier to use with a thumb. */
+        :where(button, input, select, textarea) { min-height: 42px; }
+        :where(button, input, select, textarea):focus-visible,
+        :where([tabindex]):focus-visible {
+            outline: 3px solid rgba(103,216,232,.78);
+            outline-offset: 2px;
+        }
+        .nav button { min-height: 44px; }
+        .btn { min-height: 42px; }
+        .table-wrap, .sheet-scroll, .excel-desktop, .certificate-preview-wrap {
+            scrollbar-color: rgba(103,216,232,.55) rgba(255,255,255,.06);
+            scrollbar-width: thin;
+        }
+        .table-wrap {
+            position: relative;
+            border-radius: 8px;
+        }
+        .table-wrap::after {
+            content: '↔  រំកិលដើម្បីមើលបន្ថែម';
+            display: none;
+            padding: 7px 10px;
+            color: var(--muted);
+            border-top: 1px solid var(--line);
+            font-size: 11px;
+            text-align: right;
+        }
+        .student-actions, .account-actions, .form-actions, .header-actions {
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .student-actions .btn, .account-actions .btn,
+        .form-actions .btn, .header-actions .btn {
+            min-height: 42px;
+        }
+        .panel input, .panel select, .panel textarea {
+            max-width: 100%;
+        }
+        .permission-account .form-grid input[type="checkbox"] {
+            min-height: 20px;
+        }
+
+        @media (max-width: 680px) {
+            .sidebar {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                padding: 12px 12px 10px;
+                box-shadow: 0 8px 20px rgba(0,0,0,.14);
+            }
+            .sidebar .brand {
+                margin: 0 0 12px;
+            }
+            .sidebar .brand strong {
+                font-size: 15px;
+            }
+            .nav {
+                gap: 7px;
+                margin: 0 -2px;
+                padding: 0 2px 5px;
+                overscroll-behavior-inline: contain;
+            }
+            .nav button {
+                gap: 7px;
+                min-height: 44px;
+                padding: 9px 12px;
+                white-space: nowrap;
+            }
+            .nav button span:last-child {
+                display: inline;
+                font-size: 12px;
+            }
+            .nav-icon {
+                width: 18px;
+            }
+            main {
+                padding: 20px 12px 30px;
+            }
+            .topbar {
+                display: block;
+                margin-bottom: 20px;
+            }
+            .topbar .header-actions {
+                margin-top: 14px;
+            }
+            .topbar .header-actions .btn {
+                flex: 1 1 150px;
+            }
+            .cards {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .card {
+                min-width: 0;
+                padding: 14px 12px;
+            }
+            .card .number {
+                font-size: 24px;
+            }
+            .panel {
+                padding: 16px 13px;
+            }
+            .panel-head {
+                align-items: flex-start;
+                gap: 10px;
+                margin-bottom: 14px;
+            }
+            .panel-head > :last-child {
+                max-width: 100%;
+            }
+            .panel-head .btn {
+                flex: 0 1 auto;
+            }
+            .form-grid, .sheet-controls {
+                gap: 11px;
+            }
+            .form-actions, .header-actions {
+                gap: 8px;
+            }
+            .form-actions .btn, .header-actions .btn {
+                flex: 1 1 140px;
+            }
+            .table-wrap {
+                margin-inline: -4px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .table-wrap::after {
+                display: block;
+            }
+            table {
+                min-width: 600px;
+            }
+            th, td {
+                padding: 11px 10px;
+            }
+            .student-actions {
+                gap: 8px;
+            }
+            .student-actions .btn,
+            .account-actions .btn {
+                flex: 1 1 auto;
+            }
+            .login-screen {
+                padding: 12px;
+            }
+            .auth-content {
+                padding: 26px 18px 28px;
+            }
+            .auth-tabs, .auth-switch {
+                gap: 5px;
+            }
+            .auth-tab {
+                min-height: 44px;
+                padding-inline: 4px;
+                white-space: normal;
+            }
+            .password-toggle {
+                min-height: 34px;
+            }
+            .excel-desktop {
+                margin-inline: -13px;
+                border-radius: 0;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .sidebar .brand small {
+                display: none;
+            }
+            .cards {
+                gap: 7px;
+            }
+            .card .label {
+                font-size: 11px;
+            }
+            .card .number {
+                font-size: 21px;
+            }
+            .nav button {
+                padding-inline: 10px;
+            }
+        }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsuites@4.9.10/dist/jsuites.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspreadsheet-ce@4.15.0/dist/jspreadsheet.css">
@@ -664,14 +886,14 @@
         <div class="login-box">
             <div class="auth-visual"><div class="brand"><div class="brand-mark">D</div><div><strong>System Data School</strong><small>School Desk · Local</small></div></div><div><h2>Learn. Grow. Belong.</h2><p>A welcoming digital space for every learner and school team.</p><div class="auth-art" aria-hidden="true"></div></div></div>
             <div class="auth-content">
-                <button class="login-theme-toggle" id="login-theme-toggle" type="button" aria-pressed="false">☾ Dark mode</button>
+                <button class="login-theme-toggle" id="login-theme-toggle" type="button" aria-pressed="false"><span data-ui-icon="moon" aria-hidden="true"></span><span>Dark mode</span></button>
                 <h1 id="auth-title">Welcome back</h1>
                 <p class="sub" id="auth-subtitle">Sign in to continue to your school workspace.</p>
                 <div class="auth-tabs"><button class="auth-tab active" type="button" data-auth-mode="user">Teacher</button><button class="auth-tab" type="button" data-auth-mode="admin">Admin</button><button class="auth-tab" type="button" data-auth-mode="owner">Owner</button></div>
                 <div id="user-auth" class="auth-panel">
                     <form class="login-form" id="user-login-form">
                         <label>Teacher username<input name="username" type="text" required autocomplete="username" placeholder="Teacher username"></label>
-                        <label class="password-field">Password<input name="password" type="password" required minlength="6" autocomplete="current-password" placeholder="Enter your password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label>
+                        <label class="password-field">Password<input name="password" type="password" required minlength="6" autocomplete="current-password" placeholder="Enter your password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password"><span data-ui-icon="eye" aria-hidden="true"></span></button></label>
                         <p class="login-error" id="user-login-error" aria-live="polite"></p>
                         <button class="btn" type="submit">Sign in</button>
                     </form>
@@ -679,7 +901,7 @@
             <div id="admin-auth" class="auth-panel" hidden>
                 <form class="login-form" id="admin-login-form">
                     <label>Admin username<input name="username" required autocomplete="username" placeholder="Admin username"></label>
-                    <label class="password-field">Admin password<input name="password" type="password" required autocomplete="current-password" placeholder="Admin password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label>
+                    <label class="password-field">Admin password<input name="password" type="password" required autocomplete="current-password" placeholder="Admin password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password"><span data-ui-icon="eye" aria-hidden="true"></span></button></label>
                     <p class="login-error" id="admin-login-error" aria-live="polite"></p>
                     <button class="btn" type="submit">ចូលជា Admin</button>
                 </form>
@@ -687,7 +909,7 @@
             <div id="owner-auth" hidden>
                 <form class="login-form" id="owner-login-form">
                     <label>Owner username<input name="username" required autocomplete="username" placeholder="owner"></label>
-                    <label class="password-field">Owner password<input name="password" type="password" required autocomplete="current-password" placeholder="Owner password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label>
+                    <label class="password-field">Owner password<input name="password" type="password" required autocomplete="current-password" placeholder="Owner password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password"><span data-ui-icon="eye" aria-hidden="true"></span></button></label>
                     <p class="login-error" id="owner-login-error" aria-live="polite"></p>
                     <button class="btn" type="submit">ចូលជា Owner</button>
                 </form>
@@ -701,20 +923,20 @@
             <div class="brand"><div class="brand-mark">D</div><div><strong>System Data School</strong><small>School Desk · Local</small></div></div>
             <p class="nav-label">គ្រប់គ្រងសាលា</p>
             <nav class="nav" aria-label="Main navigation">
-                <button class="active" data-view="dashboard"><span class="nav-icon">⌂</span><span>ទំព័រដើម</span></button>
-                <button data-view="students"><span class="nav-icon">♙</span><span>បញ្ជីសិស្ស</span></button>
-                <button data-view="attendance"><span class="nav-icon">✓</span><span>វត្តមាន</span></button>
-                <button data-view="classes"><span class="nav-icon">▤</span><span>ថ្នាក់រៀននីមួយៗ</span></button>
-                <button data-view="teachers"><span class="nav-icon">♟</span><span>គ្រូបង្រៀន</span></button>
-                <button data-view="schedule"><span class="nav-icon">◷</span><span>កាលវិភាគ</span></button>
-                <button data-view="fees"><span class="nav-icon">$</span><span>ថ្លៃសិក្សា</span></button>
-                <button data-view="staff"><span class="nav-icon">♙</span><span>បុគ្គលិក</span></button>
-                <button data-view="announcements"><span class="nav-icon">!</span><span>សេចក្តីជូនដំណឹង</span></button>
-                <button data-view="reports"><span class="nav-icon">▥</span><span>របាយការណ៍</span></button>
-                <button data-view="backup"><span class="nav-icon">↕</span><span>បម្រុងទុក/ស្ដារ</span></button>
-                <button class="admin-only" data-view="password-reset"><span class="nav-icon">↻</span><span>Reset password</span></button>
-                <button class="owner-only" data-view="owner-accounts"><span class="nav-icon">♙</span><span>បង្កើត Account</span></button>
-                <button class="owner-only" data-view="owner-permissions"><span class="nav-icon">⚙</span><span>កំណត់សិទ្ធិ</span></button>
+                <button class="active" data-view="dashboard"><span class="nav-icon" data-icon="home" aria-hidden="true"></span><span>ទំព័រដើម</span></button>
+                <button data-view="students"><span class="nav-icon" data-icon="student" aria-hidden="true"></span><span>បញ្ជីសិស្ស</span></button>
+                <button data-view="attendance"><span class="nav-icon" data-icon="check" aria-hidden="true"></span><span>វត្តមាន</span></button>
+                <button data-view="classes"><span class="nav-icon" data-icon="classes" aria-hidden="true"></span><span>ថ្នាក់រៀននីមួយៗ</span></button>
+                <button data-view="teachers"><span class="nav-icon" data-icon="teacher" aria-hidden="true"></span><span>គ្រូបង្រៀន</span></button>
+                <button data-view="schedule"><span class="nav-icon" data-icon="clock" aria-hidden="true"></span><span>កាលវិភាគ</span></button>
+                <button data-view="fees"><span class="nav-icon" data-icon="wallet" aria-hidden="true"></span><span>ថ្លៃសិក្សា</span></button>
+                <button data-view="staff"><span class="nav-icon" data-icon="staff" aria-hidden="true"></span><span>បុគ្គលិក</span></button>
+                <button data-view="announcements"><span class="nav-icon" data-icon="alert" aria-hidden="true"></span><span>សេចក្តីជូនដំណឹង</span></button>
+                <button data-view="reports"><span class="nav-icon" data-icon="report" aria-hidden="true"></span><span>របាយការណ៍</span></button>
+                <button data-view="backup"><span class="nav-icon" data-icon="backup" aria-hidden="true"></span><span>បម្រុងទុក/ស្ដារ</span></button>
+                <button class="admin-only" data-view="password-reset"><span class="nav-icon" data-icon="refresh" aria-hidden="true"></span><span>Reset password</span></button>
+                <button class="owner-only" data-view="owner-accounts"><span class="nav-icon" data-icon="account" aria-hidden="true"></span><span>បង្កើត Account</span></button>
+                <button class="owner-only" data-view="owner-permissions"><span class="nav-icon" data-icon="settings" aria-hidden="true"></span><span>កំណត់សិទ្ធិ</span></button>
             </nav>
             <div class="side-note">ទិន្នន័យនឹង sync ទៅ cloud នៅពេល server និង Supabase ត្រូវបានកំណត់ត្រឹមត្រូវ។</div>
         </aside>
@@ -888,8 +1110,8 @@
                 });
             });
         };
-        const renderManagedUserSettings = () => { if (!isAdmin() || isOwner() || document.getElementById('teacher-accounts')) return; const section = document.createElement('section'); section.className = 'view admin-only'; section.id = 'teacher-accounts'; section.innerHTML = '<div class="panel"><div class="panel-head"><div><h2>បង្កើត Teacher account</h2><small>Admin អាចបង្កើត Username និង Password សម្រាប់ Teacher ប៉ុណ្ណោះ</small></div></div><form class="login-form" id="managed-user-form"><label>Teacher username<input name="username" required autocomplete="off"></label><label class="password-field">Teacher password<input name="password" type="password" required minlength="8" autocomplete="new-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><label class="password-field">បញ្ជាក់ Admin password<input name="creatorPassword" type="password" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><p class="login-error" id="managed-user-error" aria-live="polite"></p><button class="btn" type="submit">បង្កើត Teacher account</button></form></div>'; document.querySelector('main').append(section); section.querySelector('form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#managed-user-error'); error.textContent = ''; const payload = Object.fromEntries(new FormData(event.currentTarget)); payload.creatorRole = currentRole; payload.creatorUsername = sessionStorage.getItem('seyha-username') || ''; const response = await fetch('/api/managed-user-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានបង្កើត Teacher account រួចរាល់។ អាច login ជា Teacher បាន។' : (result.error || 'មិនអាចបង្កើតបានទេ។'); if (response.ok) event.currentTarget.reset(); }); };
-        const renderPasswordResetSettings = () => { if (!isAdmin() || document.getElementById('password-reset')) return; const section = document.createElement('section'); section.className = 'view admin-only'; section.id = 'password-reset'; const targetLabel = isOwner() ? 'Admin ឬ Teacher username' : 'Teacher username'; const creatorLabel = isOwner() ? 'Owner password' : 'Admin password'; section.innerHTML = `<div class="panel"><div class="panel-head"><div><h2>Reset password</h2><small>${isOwner() ? 'Owner អាចកំណត់ password ថ្មីឲ្យ Admin ឬ Teacher' : 'Admin អាចកំណត់ password ថ្មីឲ្យ Teacher'}</small></div></div><form class="login-form" id="password-reset-form"><label>${targetLabel}<input name="targetUsername" required autocomplete="off"></label><label class="password-field">Password ថ្មី<input name="newPassword" type="password" required minlength="8" autocomplete="new-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><label class="password-field">បញ្ជាក់ ${creatorLabel}<input name="creatorPassword" type="password" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></label><p class="login-error" id="password-reset-error" aria-live="polite"></p><button class="btn" type="submit">រក្សាទុក password ថ្មី</button></form></div>`; document.querySelector('main').append(section); section.querySelector('form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#password-reset-error'); error.textContent = ''; const payload = Object.fromEntries(new FormData(event.currentTarget)); payload.creatorRole = currentRole; payload.creatorUsername = sessionStorage.getItem('seyha-username') || ''; const response = await fetch('/api/reset-managed-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានកំណត់ password ថ្មីរួចរាល់។' : (result.error || 'មិនអាច reset password បានទេ។'); if (response.ok) event.currentTarget.reset(); }); };
+        const renderManagedUserSettings = () => { if (!isAdmin() || isOwner() || document.getElementById('teacher-accounts')) return; const section = document.createElement('section'); section.className = 'view admin-only'; section.id = 'teacher-accounts'; section.innerHTML = '<div class="panel"><div class="panel-head"><div><h2>បង្កើត Teacher account</h2><small>Admin អាចបង្កើត Username និង Password សម្រាប់ Teacher ប៉ុណ្ណោះ</small></div></div><form class="login-form" id="managed-user-form"><label>Teacher username<input name="username" required autocomplete="off"></label><label class="password-field">Teacher password<input name="password" type="password" required minlength="8" autocomplete="new-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password"><span data-ui-icon="eye" aria-hidden="true"></span></button></label><label class="password-field">បញ្ជាក់ Admin password<input name="creatorPassword" type="password" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password"><span data-ui-icon="eye" aria-hidden="true"></span></button></label><p class="login-error" id="managed-user-error" aria-live="polite"></p><button class="btn" type="submit">បង្កើត Teacher account</button></form></div>'; document.querySelector('main').append(section); section.querySelector('form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#managed-user-error'); error.textContent = ''; const payload = Object.fromEntries(new FormData(event.currentTarget)); payload.creatorRole = currentRole; payload.creatorUsername = sessionStorage.getItem('seyha-username') || ''; const response = await fetch('/api/managed-user-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានបង្កើត Teacher account រួចរាល់។ អាច login ជា Teacher បាន។' : (result.error || 'មិនអាចបង្កើតបានទេ។'); if (response.ok) event.currentTarget.reset(); }); };
+        const renderPasswordResetSettings = () => { if (!isAdmin() || document.getElementById('password-reset')) return; const section = document.createElement('section'); section.className = 'view admin-only'; section.id = 'password-reset'; const targetLabel = isOwner() ? 'Admin ឬ Teacher username' : 'Teacher username'; const creatorLabel = isOwner() ? 'Owner password' : 'Admin password'; section.innerHTML = `<div class="panel"><div class="panel-head"><div><h2>Reset password</h2><small>${isOwner() ? 'Owner អាចកំណត់ password ថ្មីឲ្យ Admin ឬ Teacher' : 'Admin អាចកំណត់ password ថ្មីឲ្យ Teacher'}</small></div></div><form class="login-form" id="password-reset-form"><label>${targetLabel}<input name="targetUsername" required autocomplete="off"></label><label class="password-field">Password ថ្មី<input name="newPassword" type="password" required minlength="8" autocomplete="new-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password"><span data-ui-icon="eye" aria-hidden="true"></span></button></label><label class="password-field">បញ្ជាក់ ${creatorLabel}<input name="creatorPassword" type="password" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Show password"><span data-ui-icon="eye" aria-hidden="true"></span></button></label><p class="login-error" id="password-reset-error" aria-live="polite"></p><button class="btn" type="submit">រក្សាទុក password ថ្មី</button></form></div>`; document.querySelector('main').append(section); section.querySelector('form').addEventListener('submit', async event => { event.preventDefault(); const error = section.querySelector('#password-reset-error'); error.textContent = ''; const payload = Object.fromEntries(new FormData(event.currentTarget)); payload.creatorRole = currentRole; payload.creatorUsername = sessionStorage.getItem('seyha-username') || ''; const response = await fetch('/api/reset-managed-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json().catch(() => ({})); error.textContent = response.ok ? 'បានកំណត់ password ថ្មីរួចរាល់។' : (result.error || 'មិនអាច reset password បានទេ។'); if (response.ok) event.currentTarget.reset(); }); };
         const setDataLoading = loading => { const loader = document.getElementById('data-loader'); if (loader) loader.hidden = !loading; };
         const unlock = () => { loginScreen.style.display = 'none'; app.classList.remove('auth-hidden'); applyRole(); renderOwnerSettings(); renderOwnerPermissions(); renderPasswordResetSettings(); };
         const switchAuthMode = mode => { document.querySelectorAll('.auth-tab').forEach(item => item.classList.toggle('active', item.dataset.authMode === mode)); document.getElementById('user-auth').hidden = mode !== 'user'; document.getElementById('admin-auth').hidden = mode !== 'admin'; document.getElementById('owner-auth').hidden = mode !== 'owner'; document.getElementById('auth-title').textContent = mode === 'admin' ? 'Admin access' : mode === 'owner' ? 'Owner access' : 'Welcome back'; document.getElementById('auth-subtitle').textContent = mode === 'user' ? 'Sign in to continue to your school workspace.' : 'Use your separate school staff credentials to continue.'; };
@@ -897,7 +1119,7 @@
         loginThemeToggle.addEventListener('click', () => setLoginTheme(loginScreen.classList.contains('theme-dark') ? 'light' : 'dark'));
         setLoginTheme(localStorage.getItem('seyha-login-theme') === 'dark' ? 'dark' : 'light');
         document.querySelectorAll('[data-auth-mode]').forEach(tab => tab.addEventListener('click', () => switchAuthMode(tab.dataset.authMode)));
-        document.addEventListener('click', event => { const toggle = event.target.closest('[data-password-toggle]'); if (!toggle) return; const input = toggle.parentElement.querySelector('input[type="password"], input[type="text"]'); if (!input) return; const visible = input.type === 'text'; input.type = visible ? 'password' : 'text'; toggle.textContent = visible ? '◉' : '◌'; toggle.setAttribute('aria-label', visible ? 'Show password' : 'Hide password'); });
+        document.addEventListener('click', event => { const toggle = event.target.closest('[data-password-toggle]'); if (!toggle) return; const input = toggle.parentElement.querySelector('input[type="password"], input[type="text"]'); if (!input) return; const visible = input.type === 'text'; input.type = visible ? 'password' : 'text'; toggle.setAttribute('aria-label', visible ? 'Show password' : 'Hide password'); });
         const roleLogin = async (form, errorElement) => { errorElement.textContent = ''; const submitButton = form.querySelector('button[type="submit"]'); const originalText = submitButton?.textContent || ''; if (submitButton) { submitButton.disabled = true; submitButton.setAttribute('aria-busy', 'true'); submitButton.textContent = 'កំពុងចូល...'; } try { const credentials = Object.fromEntries(new FormData(form)); const response = await fetch('/api/role-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(credentials), signal: AbortSignal.timeout(15000) }); if (!response.ok) { const result = await response.json().catch(() => ({})); errorElement.textContent = result.error || 'Username ឬ Password មិនត្រឹមត្រូវ។'; return; } const result = await response.json(); currentRole = result.role; sessionStorage.setItem('seyha-auth', 'true'); sessionStorage.setItem('seyha-role', currentRole); sessionStorage.setItem('seyha-username', credentials.username); unlock(); render(); setDataLoading(true); await initializeRemoteStorage(); render(); setDataLoading(false); } catch (error) { console.error('Login request failed.', error); errorElement.textContent = error.name === 'TimeoutError' ? 'Server ឆ្លើយតបយឺតពេក។ សូមព្យាយាមម្ដងទៀត។' : 'មិនអាចភ្ជាប់ទៅ server បានទេ។ សូម Deploy server ហើយសាកល្បងម្ដងទៀត។'; setDataLoading(false); } finally { if (submitButton) { submitButton.disabled = false; submitButton.removeAttribute('aria-busy'); submitButton.textContent = originalText; } } };
         adminLoginForm.addEventListener('submit', event => { event.preventDefault(); roleLogin(adminLoginForm, adminLoginError); });
         ownerLoginForm.addEventListener('submit', event => { event.preventDefault(); roleLogin(ownerLoginForm, ownerLoginError); });
@@ -2149,7 +2371,7 @@
     if (!nav || !main) return;
     const navButton = document.createElement('button');
     navButton.dataset.view = 'inventory';
-    navButton.innerHTML = '<span class="nav-icon">▦</span><span>ស្តុកសម្ភារៈ</span>';
+    navButton.innerHTML = '<span class="nav-icon" data-icon="classes" aria-hidden="true"></span><span>ស្តុកសម្ភារៈ</span>';
     nav.append(navButton);
 
     const section = document.createElement('section');
@@ -2408,5 +2630,46 @@
     render();
 })();
 </script>
+    <script>
+        /* Keep iconography deterministic: Unicode symbols are rendered with
+           different fonts on each OS, so use one semantic SVG set and tune its
+           weight for Android (Material-like) and Apple (SF Symbols-like). */
+        (() => {
+            const root = document.documentElement;
+            const ua = navigator.userAgent || '';
+            const isAndroid = /Android/i.test(ua) || Boolean(navigator.userAgentData && navigator.userAgentData.platform === 'Android');
+            const isApple = /iPhone|iPad|iPod|Macintosh/i.test(ua) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            root.classList.toggle('platform-android', isAndroid);
+            root.classList.toggle('platform-apple', !isAndroid && isApple);
+
+            const paths = {
+                home: '<path d="M3 10.8 12 3l9 7.8v9.2a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z"/>',
+                student: '<circle cx="12" cy="8" r="3.2"/><path d="M5.2 20c.5-3.4 2.7-5.2 6.8-5.2s6.3 1.8 6.8 5.2"/>',
+                check: '<path d="m5 12.5 4.2 4.2L19 7"/>',
+                classes: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M9 9v11"/>',
+                teacher: '<circle cx="12" cy="7.5" r="3"/><path d="M4.5 20c.7-3.7 3.1-5.5 7.5-5.5s6.8 1.8 7.5 5.5"/>',
+                clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>',
+                wallet: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H19v16H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 7h15M15 12h5v4h-5a2 2 0 0 1 0-4z"/>',
+                staff: '<circle cx="9" cy="8" r="2.7"/><circle cx="16.5" cy="9" r="2.2"/><path d="M3.8 19c.4-3.3 2.1-5 5.2-5s4.8 1.7 5.2 5M14 14.6c2.8-.1 4.6 1.3 5 4.4"/>',
+                alert: '<path d="M12 4a6 6 0 0 1 6 6v3.5l2 3.5H4l2-3.5V10a6 6 0 0 1 6-6z"/><path d="M10 20h4"/><path d="M12 7v3"/>',
+                report: '<path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 16v-3M12 16V9M15 16v-5"/>',
+                backup: '<path d="M5 8V4h4M19 16v4h-4"/><path d="M5.5 4.5A8 8 0 0 1 19 9M18.5 19.5A8 8 0 0 1 5 15"/>',
+                refresh: '<path d="M19 8V4l-2.2 2.2A7.5 7.5 0 1 0 19.2 15"/><path d="M19 4h-4"/>',
+                account: '<circle cx="12" cy="8" r="3"/><path d="M5 20c.6-3.5 2.9-5.3 7-5.3s6.4 1.8 7 5.3"/>',
+                settings: '<circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1-1.7 2.9-.2-.1a2 2 0 0 0-2 .1l-.2.1a2 2 0 0 0-1 1.7v.2h-3.4v-.2a2 2 0 0 0-1-1.7l-.2-.1a2 2 0 0 0-2-.1l-.2.1-1.7-2.9.1-.1a2 2 0 0 0 1-1.8v-.3a2 2 0 0 0-1-1.8l-.1-.1 1.7-2.9.2.1a2 2 0 0 0 2-.1l.2-.1a2 2 0 0 0 1-1.7V6h3.4v.2a2 2 0 0 0 1 1.7l.2.1a2 2 0 0 0 2 .1l.2-.1 1.7 2.9-.1.1a2 2 0 0 0-1 1.8v.3a2 2 0 0 0 1 1.9z"/>',
+                moon: '<path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5z"/>',
+                eye: '<path d="M2.5 12s3.3-5 9.5-5 9.5 5 9.5 5-3.3 5-9.5 5-9.5-5-9.5-5z"/><circle cx="12" cy="12" r="2.2"/>'
+            };
+            const icon = name => paths[name] ? `<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">${paths[name]}</svg>` : '';
+            document.querySelectorAll('[data-icon], [data-ui-icon]').forEach(element => {
+                const name = element.dataset.icon || element.dataset.uiIcon;
+                if (icon(name)) element.innerHTML = icon(name);
+            });
+            document.querySelectorAll('[data-password-toggle]').forEach(button => {
+                button.innerHTML = icon('eye');
+            });
+        })();
+    </script>
 </body>
 </html>
