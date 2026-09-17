@@ -2097,6 +2097,21 @@
         #inventory .inventory-table .stock-balance { font-weight:700; color:#67d8e8; }
         #inventory .inventory-table .stock-warning { color:#ff9e9e; }
         #inventory .inventory-form { margin-bottom:16px; }
+        #inventory .inventory-table .today-withdrawal { color:#e8b878; font-weight:700; }
+        #inventory-print-sheet { display:none; }
+        @media print {
+            body.inventory-printing > *:not(#inventory-print-sheet) { display:none !important; }
+            body.inventory-printing #inventory-print-sheet { display:block; }
+            #inventory-print-sheet { min-height: 277mm; padding: 14mm; color:#111; background:#fff; font-family: Arial, sans-serif; }
+            #inventory-print-sheet h1 { margin:0 0 5mm; text-align:center; font-size:20px; }
+            #inventory-print-sheet p { margin:0 0 7mm; text-align:center; font-size:12px; }
+            #inventory-print-sheet table { width:100%; border-collapse:collapse; table-layout:fixed; border:2px solid #111; }
+            #inventory-print-sheet th, #inventory-print-sheet td { height:13mm; padding:3mm 2mm; border:1px solid #111; text-align:center; font-size:12px; overflow-wrap:anywhere; }
+            #inventory-print-sheet th { background:#eee; font-weight:700; }
+            #inventory-print-sheet th:nth-child(2), #inventory-print-sheet td:nth-child(2) { width:38%; text-align:left; }
+            #inventory-print-sheet th:nth-child(3), #inventory-print-sheet td:nth-child(3) { width:15%; }
+            #inventory-print-sheet .print-total td { font-weight:700; background:#f4f4f4; }
+        }
         @media (max-width:680px) { #inventory .inventory-summary { grid-template-columns:1fr; } #inventory .inventory-toolbar input { min-width:100%; } }
     `;
     document.head.append(style);
@@ -2119,6 +2134,7 @@
                 <div class="header-actions">
                     <button class="btn ghost" type="button" id="inventory-import">នាំចូល Excel</button>
                     <input id="inventory-file" type="file" accept=".xlsx,.xls,.csv" hidden>
+                    <button class="btn ghost" type="button" id="inventory-print">ព្រីនថ្ងៃនេះ</button>
                     <button class="btn ghost" type="button" id="inventory-export">នាំចេញ Excel</button>
                 </div>
             </div>
@@ -2127,21 +2143,25 @@
                 <label>ប្រភេទ<input name="variant" required placeholder="ឧ. M ឬ សៀវភៅ"></label>
                 <label>ចំនួននៅ<input name="received" type="number" min="0" step="1" value="0" required></label>
                 <label>ចំនួនចេញ<input name="issued" type="number" min="0" step="1" value="0" required></label>
+                <label>ដកថ្ងៃនេះ<input name="todayIssued" type="number" min="0" step="1" value="0" required></label>
                 <label>សម្គាល់<input name="note" placeholder="សម្គាល់បន្ថែម"></label>
                 <div class="form-actions"><button class="btn" type="submit">បន្ថែមសម្ភារៈ</button><button class="btn ghost" type="reset">សម្អាត</button></div>
             </form>
             <div class="inventory-summary">
                 <div class="card"><span class="label">ប្រភេទសម្ភារៈ</span><div class="number" id="inventory-types">0</div></div>
-                <div class="card"><span class="label">ចំនួននៅសរុប</span><div class="number" id="inventory-received">0</div></div>
-                <div class="card"><span class="label">ចំនួននៅសល់សរុប</span><div class="number" id="inventory-balance">0</div></div>
+                <div class="card"><span class="label">មិនទាន់ដក</span><div class="number" id="inventory-received">0</div></div>
+                <div class="card"><span class="label">នៅសល់</span><div class="number" id="inventory-balance">0</div></div>
             </div>
             <div class="inventory-toolbar"><input id="inventory-search" type="search" placeholder="ស្វែងរកឈ្មោះ ឬប្រភេទ..."><span class="muted" id="inventory-count"></span></div>
             <div class="table-wrap"><table class="module-table inventory-table">
-                <thead><tr><th>ល.រ</th><th>ឈ្មោះសម្ភារៈ</th><th>ប្រភេទ</th><th>ចំនួននៅ</th><th>ចំនួនចេញ</th><th>ចំនួននៅសល់</th><th>បាន update នៅ</th><th>សកម្មភាព</th></tr></thead>
+                <thead><tr><th>ល.រ</th><th>ឈ្មោះសម្ភារៈ</th><th>ប្រភេទ</th><th>មិនទាន់ដក</th><th>ចេញសរុប</th><th>ដកថ្ងៃនេះ</th><th>នៅសល់</th><th>បាន update នៅ</th><th>សកម្មភាព</th></tr></thead>
                 <tbody id="inventory-rows"></tbody>
             </table></div>
         </div>`;
     main.append(section);
+    const printSheet = document.createElement('section');
+    printSheet.id = 'inventory-print-sheet';
+    document.body.append(printSheet);
 
     const form = section.querySelector('#inventory-form');
     const rows = section.querySelector('#inventory-rows');
@@ -2151,15 +2171,34 @@
         const visible = inventory.filter(item => `${item.name} ${item.variant} ${item.note}`.toLowerCase().includes(query));
         rows.textContent = '';
         visible.forEach((item, index) => {
-            const balance = Math.max(Number(item.received || 0) - Number(item.issued || 0), 0);
             const tr = document.createElement('tr');
-            [index + 1, item.name, item.variant].forEach(value => {
+            const numberCell = document.createElement('td');
+            numberCell.textContent = index + 1;
+            tr.append(numberCell);
+            const uniformName = /ឯកសណ្ឋាន|uniform/i.test(String(item.name || ''));
+            const previousItem = visible[index - 1];
+            const nextItem = visible[index + 1];
+            const continuesUniformGroup = uniformName && previousItem?.name === item.name;
+            if (!continuesUniformGroup) {
+                const nameCell = document.createElement('td');
+                nameCell.textContent = item.name;
+                if (uniformName && nextItem?.name === item.name) {
+                    let rowSpan = 1;
+                    for (let nextIndex = index + 1; nextIndex < visible.length && visible[nextIndex].name === item.name; nextIndex += 1) rowSpan += 1;
+                    nameCell.rowSpan = rowSpan;
+                    nameCell.style.verticalAlign = 'middle';
+                }
+                tr.append(nameCell);
+            }
+            const variantCell = document.createElement('td');
+            variantCell.textContent = item.variant;
+            tr.append(variantCell);
+            const available = Math.max(Number(item.received || 0) - Number(item.issued || 0), 0);
+            [available, Number(item.issued || 0), Number(item.todayIssued || 0)].forEach(value => {
                 const td = document.createElement('td'); td.textContent = value; tr.append(td);
             });
-            [Number(item.received || 0), Number(item.issued || 0)].forEach(value => {
-                const td = document.createElement('td'); td.textContent = value; tr.append(td);
-            });
-            const balanceCell = document.createElement('td'); balanceCell.textContent = balance; balanceCell.className = `stock-balance${balance === 0 ? ' stock-warning' : ''}`; tr.append(balanceCell);
+            const remaining = Math.max(available - Number(item.todayIssued || 0), 0);
+            const balanceCell = document.createElement('td'); balanceCell.textContent = remaining; balanceCell.className = `stock-balance${remaining === 0 ? ' stock-warning' : ''}`; tr.append(balanceCell);
             const updatedCell = document.createElement('td'); updatedCell.textContent = item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : '-'; tr.append(updatedCell);
             const actions = document.createElement('td'); actions.className = 'module-actions';
             const edit = document.createElement('button'); edit.className = 'btn ghost'; edit.type = 'button'; edit.textContent = 'កែប្រែ';
@@ -2173,14 +2212,14 @@
         });
         if (!visible.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 8; td.className = 'module-empty'; td.textContent = 'មិនមានទិន្នន័យ'; tr.append(td); rows.append(tr); }
         section.querySelector('#inventory-types').textContent = inventory.length;
-        section.querySelector('#inventory-received').textContent = inventory.reduce((sum, item) => sum + Number(item.received || 0), 0).toLocaleString();
-        section.querySelector('#inventory-balance').textContent = inventory.reduce((sum, item) => sum + Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), 0).toLocaleString();
+        section.querySelector('#inventory-received').textContent = inventory.reduce((sum, item) => sum + Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), 0).toLocaleString();
+        section.querySelector('#inventory-balance').textContent = inventory.reduce((sum, item) => sum + Math.max(Number(item.received || 0) - Number(item.issued || 0) - Number(item.todayIssued || 0), 0), 0).toLocaleString();
         section.querySelector('#inventory-count').textContent = `${visible.length} កំណត់ត្រា`;
     };
     form.addEventListener('submit', event => {
         event.preventDefault();
         const data = Object.fromEntries(new FormData(form));
-        data.received = Number(data.received || 0); data.issued = Number(data.issued || 0);
+        data.received = Number(data.received || 0); data.issued = Number(data.issued || 0); data.todayIssued = Number(data.todayIssued || 0);
         data.updatedAt = new Date().toISOString();
         const editId = form.dataset.editId;
         if (editId) inventory = inventory.map(item => item.id === editId ? { ...item, ...data } : item);
@@ -2229,6 +2268,7 @@
             const variantIndex = findColumn(headers, ['ប្រភេទ/ទំហំ', 'ប្រភេទ', 'ទំហំ', 'variant', 'size', 'type']);
             const receivedIndex = findColumn(headers, ['ចំនួននៅ', 'ចំនួនបញ្ចូល', 'ចំនួនបានទទួល', 'received', 'in', 'ចូល']);
             const issuedIndex = findColumn(headers, ['ចំនួនចេញ', 'ចំនួនបញ្ចេញ', 'issued', 'out', 'ចេញ']);
+            const todayIssuedIndex = findColumn(headers, ['ដកថ្ងៃនេះ', 'ចំនួនដកថ្ងៃនេះ', 'today issued', 'todayout']);
             const noteIndex = findColumn(headers, ['សម្គាល់', 'note', 'remark']);
             let imported = 0;
             matrix.slice(headerIndex + 1).forEach(row => {
@@ -2241,6 +2281,7 @@
                     variant,
                     received: readNumber(row[receivedIndex]),
                     issued: readNumber(row[issuedIndex]),
+                    todayIssued: todayIssuedIndex >= 0 ? readNumber(row[todayIssuedIndex]) : 0,
                     note: noteIndex >= 0 ? String(row[noteIndex] || '').trim() : '',
                     updatedAt: new Date().toISOString()
                 };
@@ -2266,20 +2307,35 @@
     });
     section.querySelector('#inventory-import').addEventListener('click', () => section.querySelector('#inventory-file').click());
     section.querySelector('#inventory-export').addEventListener('click', () => {
-        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'ចំនួននៅ', 'ចំនួនចេញ', 'ចំនួននៅសល់', 'បាន update នៅ'];
-        const lines = [header, ...inventory.map((item, index) => [index + 1, item.name, item.variant, item.received, item.issued, Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''])];
+        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'មិនទាន់ដក', 'ចេញសរុប', 'ដកថ្ងៃនេះ', 'នៅសល់', 'បាន update នៅ'];
+        const lines = [header, ...inventory.map((item, index) => {
+        const available = Math.max(Number(item.received || 0) - Number(item.issued || 0), 0);
+        return [index + 1, item.name, item.variant, available, item.issued, item.todayIssued || 0, Math.max(available - Number(item.todayIssued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''];
+        })];
         if (!window.XLSX) { notify('មិនអាច load Excel export បានទេ។', 'error'); return; }
         const worksheet = XLSX.utils.aoa_to_sheet(lines);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'ស្តុកសម្ភារៈ');
         XLSX.writeFile(workbook, 'stock-materials.xlsx');
     });
+    section.querySelector('#inventory-print').addEventListener('click', () => {
+        const todayItems = inventory.filter(item => Number(item.todayIssued || 0) > 0);
+        const today = new Date().toLocaleDateString('km-KH');
+        const total = todayItems.reduce((sum, item) => sum + Number(item.todayIssued || 0), 0);
+        printSheet.innerHTML = `<h1>តារាងដកសម្ភារៈប្រចាំថ្ងៃ</h1><p>កាលបរិច្ឆេទ៖ ${today}</p><table><thead><tr><th>ល.រ</th><th>ឈ្មោះសម្ភារៈ</th><th>ប្រភេទ</th><th>ចំនួនដកថ្ងៃនេះ</th><th>សម្គាល់</th></tr></thead><tbody>${todayItems.map((item, index) => `<tr><td>${index + 1}</td><td>${esc(item.name)}</td><td>${esc(item.variant)}</td><td>${Number(item.todayIssued || 0)}</td><td>${esc(item.note || '')}</td></tr>`).join('') || '<tr><td colspan="5">មិនទាន់មានសម្ភារៈត្រូវដកថ្ងៃនេះ</td></tr>'}<tr class="print-total"><td colspan="3">សរុប</td><td>${total}</td><td></td></tr></tbody></table>`;
+        document.body.classList.add('inventory-printing');
+        window.print();
+    });
+    window.addEventListener('afterprint', () => document.body.classList.remove('inventory-printing'));
     const snapshotKey = 'seyha-material-inventory-last-snapshot';
     const saveDailySnapshot = () => {
         const snapshotDate = new Date().toISOString().slice(0, 10);
         if (localStorage.getItem(snapshotKey) === snapshotDate) return;
-        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'ចំនួននៅ', 'ចំនួនចេញ', 'ចំនួននៅសល់', 'បាន update នៅ'];
-        const lines = [header, ...inventory.map((item, index) => [index + 1, item.name, item.variant, item.received, item.issued, Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''])];
+        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'មិនទាន់ដក', 'ចេញសរុប', 'ដកថ្ងៃនេះ', 'នៅសល់', 'បាន update នៅ'];
+        const lines = [header, ...inventory.map((item, index) => {
+            const available = Math.max(Number(item.received || 0) - Number(item.issued || 0), 0);
+            return [index + 1, item.name, item.variant, available, item.issued, item.todayIssued || 0, Math.max(available - Number(item.todayIssued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''];
+        })];
         if (window.XLSX) {
             const worksheet = XLSX.utils.aoa_to_sheet(lines);
             const workbook = XLSX.utils.book_new();

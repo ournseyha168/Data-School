@@ -279,6 +279,7 @@ app.post('/api/inventory-sync', async (request, response) => {
             variant: String(item?.variant || item?.type || item?.category || '').trim() || '-',
             received: Math.max(0, Number(item?.received ?? item?.available ?? item?.stockIn) || 0),
             issued: Math.max(0, Number(item?.issued ?? item?.outgoing ?? item?.stockOut) || 0),
+            todayIssued: Math.max(0, Number(item?.todayIssued ?? item?.todayOut) || 0),
             note: String(item?.note || '').trim(),
             updatedAt: item?.updatedAt || new Date().toISOString()
         }))
