@@ -2137,7 +2137,7 @@
             </div>
             <div class="inventory-toolbar"><input id="inventory-search" type="search" placeholder="ស្វែងរកឈ្មោះ ឬប្រភេទ..."><span class="muted" id="inventory-count"></span></div>
             <div class="table-wrap"><table class="module-table inventory-table">
-                <thead><tr><th>ល.រ</th><th>ឈ្មោះសម្ភារៈ</th><th>ប្រភេទ</th><th>ចំនួននៅ</th><th>ចំនួនចេញ</th><th>ចំនួននៅសល់</th><th>បាន update នៅ</th><th>សម្គាល់</th><th>សកម្មភាព</th></tr></thead>
+                <thead><tr><th>ល.រ</th><th>ឈ្មោះសម្ភារៈ</th><th>ប្រភេទ</th><th>ចំនួននៅ</th><th>ចំនួនចេញ</th><th>ចំនួននៅសល់</th><th>បាន update នៅ</th><th>សកម្មភាព</th></tr></thead>
                 <tbody id="inventory-rows"></tbody>
             </table></div>
         </div>`;
@@ -2148,37 +2148,19 @@
     const search = section.querySelector('#inventory-search');
     const render = () => {
         const query = search.value.trim().toLowerCase();
-        const visible = inventory
-            .filter(item => `${item.name} ${item.variant} ${item.note}`.toLowerCase().includes(query))
-            .sort((a, b) => {
-                const nameOrder = String(a.name || '').localeCompare(String(b.name || ''), 'km');
-                return nameOrder || String(a.variant || '').localeCompare(String(b.variant || ''), 'en', { numeric: true });
-            });
+        const visible = inventory.filter(item => `${item.name} ${item.variant} ${item.note}`.toLowerCase().includes(query));
         rows.textContent = '';
-        const groupedNames = new Map();
-        visible.forEach(item => groupedNames.set(item.name, (groupedNames.get(item.name) || 0) + 1));
-        const renderedNames = new Set();
         visible.forEach((item, index) => {
             const balance = Math.max(Number(item.received || 0) - Number(item.issued || 0), 0);
             const tr = document.createElement('tr');
-            [index + 1].forEach(value => {
+            [index + 1, item.name, item.variant].forEach(value => {
                 const td = document.createElement('td'); td.textContent = value; tr.append(td);
             });
-            if (!renderedNames.has(item.name)) {
-                const nameCell = document.createElement('td');
-                nameCell.textContent = item.name;
-                nameCell.rowSpan = groupedNames.get(item.name);
-                nameCell.style.verticalAlign = 'middle';
-                tr.append(nameCell);
-                renderedNames.add(item.name);
-            }
-            const variantCell = document.createElement('td'); variantCell.textContent = item.variant; tr.append(variantCell);
             [Number(item.received || 0), Number(item.issued || 0)].forEach(value => {
                 const td = document.createElement('td'); td.textContent = value; tr.append(td);
             });
             const balanceCell = document.createElement('td'); balanceCell.textContent = balance; balanceCell.className = `stock-balance${balance === 0 ? ' stock-warning' : ''}`; tr.append(balanceCell);
             const updatedCell = document.createElement('td'); updatedCell.textContent = item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : '-'; tr.append(updatedCell);
-            const noteCell = document.createElement('td'); noteCell.textContent = item.note || '-'; tr.append(noteCell);
             const actions = document.createElement('td'); actions.className = 'module-actions';
             const edit = document.createElement('button'); edit.className = 'btn ghost'; edit.type = 'button'; edit.textContent = 'កែប្រែ';
             edit.addEventListener('click', () => {
@@ -2189,7 +2171,7 @@
             remove.addEventListener('click', () => { inventory = inventory.filter(row => row.id !== item.id); saveInventory(); window.dispatchEvent(new CustomEvent('seyha-storage-changed')); render(); });
             actions.append(edit, remove); tr.append(actions); rows.append(tr);
         });
-        if (!visible.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 9; td.className = 'module-empty'; td.textContent = 'មិនមានទិន្នន័យ'; tr.append(td); rows.append(tr); }
+        if (!visible.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 8; td.className = 'module-empty'; td.textContent = 'មិនមានទិន្នន័យ'; tr.append(td); rows.append(tr); }
         section.querySelector('#inventory-types').textContent = inventory.length;
         section.querySelector('#inventory-received').textContent = inventory.reduce((sum, item) => sum + Number(item.received || 0), 0).toLocaleString();
         section.querySelector('#inventory-balance').textContent = inventory.reduce((sum, item) => sum + Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), 0).toLocaleString();
@@ -2284,8 +2266,8 @@
     });
     section.querySelector('#inventory-import').addEventListener('click', () => section.querySelector('#inventory-file').click());
     section.querySelector('#inventory-export').addEventListener('click', () => {
-        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'ចំនួននៅ', 'ចំនួនចេញ', 'ចំនួននៅសល់', 'បាន update នៅ', 'សម្គាល់'];
-        const lines = [header, ...inventory.map((item, index) => [index + 1, item.name, item.variant, item.received, item.issued, Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : '', item.note || ''])];
+        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'ចំនួននៅ', 'ចំនួនចេញ', 'ចំនួននៅសល់', 'បាន update នៅ'];
+        const lines = [header, ...inventory.map((item, index) => [index + 1, item.name, item.variant, item.received, item.issued, Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''])];
         if (!window.XLSX) { notify('មិនអាច load Excel export បានទេ។', 'error'); return; }
         const worksheet = XLSX.utils.aoa_to_sheet(lines);
         const workbook = XLSX.utils.book_new();
@@ -2296,8 +2278,8 @@
     const saveDailySnapshot = () => {
         const snapshotDate = new Date().toISOString().slice(0, 10);
         if (localStorage.getItem(snapshotKey) === snapshotDate) return;
-        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'ចំនួននៅ', 'ចំនួនចេញ', 'ចំនួននៅសល់', 'បាន update នៅ', 'សម្គាល់'];
-        const lines = [header, ...inventory.map((item, index) => [index + 1, item.name, item.variant, item.received, item.issued, Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : '', item.note || ''])];
+        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'ចំនួននៅ', 'ចំនួនចេញ', 'ចំនួននៅសល់', 'បាន update នៅ'];
+        const lines = [header, ...inventory.map((item, index) => [index + 1, item.name, item.variant, item.received, item.issued, Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''])];
         if (window.XLSX) {
             const worksheet = XLSX.utils.aoa_to_sheet(lines);
             const workbook = XLSX.utils.book_new();
