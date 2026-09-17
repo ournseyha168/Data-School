@@ -2082,7 +2082,19 @@
             return initialInventory;
         }
     };
-    let inventory = readInventory();
+    const uniformSizes = new Set(['M', 'S', 'L', 'XL', '2XL', '3XL']);
+    const normalizeInventoryNames = items => {
+        let lastUniformName = '';
+        return items.map(item => {
+            const variant = String(item.variant || '').trim().toUpperCase();
+            const name = String(item.name || '').trim();
+            if (name && /ឯកសណ្ឋាន|uniform/i.test(name)) lastUniformName = name;
+            if (!name && uniformSizes.has(variant) && lastUniformName) return { ...item, name: lastUniformName };
+            if (name && !/ឯកសណ្ឋាន|uniform/i.test(name)) lastUniformName = '';
+            return { ...item, name };
+        });
+    };
+    let inventory = normalizeInventoryNames(readInventory());
     const saveInventory = () => localStorage.setItem(inventoryKey, JSON.stringify(inventory));
 
     const style = document.createElement('style');
@@ -2094,6 +2106,11 @@
         #inventory .inventory-table th, #inventory .inventory-table td { text-align:center; vertical-align:middle; }
         #inventory .inventory-table th:nth-child(2), #inventory .inventory-table td:nth-child(2),
         #inventory .inventory-table th:last-child, #inventory .inventory-table td:last-child { text-align:left; }
+        #inventory .inventory-table { background:#fff; color:#111; border:1px solid #222; }
+        #inventory .inventory-table th, #inventory .inventory-table td { color:#111; border:1px solid #777; background:#fff; }
+        #inventory .inventory-table th { font-weight:700; text-align:center; background:#f1f1f1; }
+        #inventory .inventory-table tbody tr:hover td { background:#f8fbff; }
+        #inventory .inventory-table .btn { color:#111; }
         #inventory .inventory-table .stock-balance { font-weight:700; color:#67d8e8; }
         #inventory .inventory-table .stock-warning { color:#ff9e9e; }
         #inventory .inventory-form { margin-bottom:16px; }
@@ -2143,7 +2160,6 @@
                 <label>ប្រភេទ<input name="variant" required placeholder="ឧ. M ឬ សៀវភៅ"></label>
                 <label>ចំនួននៅ<input name="received" type="number" min="0" step="1" value="0" required></label>
                 <label>ចំនួនចេញ<input name="issued" type="number" min="0" step="1" value="0" required></label>
-                <label>ដកថ្ងៃនេះ<input name="todayIssued" type="number" min="0" step="1" value="0" required></label>
                 <label>សម្គាល់<input name="note" placeholder="សម្គាល់បន្ថែម"></label>
                 <div class="form-actions"><button class="btn" type="submit">បន្ថែមសម្ភារៈ</button><button class="btn ghost" type="reset">សម្អាត</button></div>
             </form>
@@ -2154,7 +2170,7 @@
             </div>
             <div class="inventory-toolbar"><input id="inventory-search" type="search" placeholder="ស្វែងរកឈ្មោះ ឬប្រភេទ..."><span class="muted" id="inventory-count"></span></div>
             <div class="table-wrap"><table class="module-table inventory-table">
-                <thead><tr><th>ល.រ</th><th>ឈ្មោះសម្ភារៈ</th><th>ប្រភេទ</th><th>មិនទាន់ដក</th><th>ចេញសរុប</th><th>ដកថ្ងៃនេះ</th><th>នៅសល់</th><th>បាន update នៅ</th><th>សកម្មភាព</th></tr></thead>
+                <thead><tr><th>ល.រ</th><th>ឈ្មោះសម្ភារៈ</th><th>ប្រភេទ</th><th>មិនទាន់ដក</th><th>ចេញ</th><th>នៅសល់</th><th>បាន update នៅ</th><th>សកម្មភាព</th></tr></thead>
                 <tbody id="inventory-rows"></tbody>
             </table></div>
         </div>`;
@@ -2168,7 +2184,7 @@
     const search = section.querySelector('#inventory-search');
     const render = () => {
         const query = search.value.trim().toLowerCase();
-        const visible = inventory.filter(item => `${item.name} ${item.variant} ${item.note}`.toLowerCase().includes(query));
+        const visible = normalizeInventoryNames(inventory).filter(item => `${item.name} ${item.variant} ${item.note}`.toLowerCase().includes(query));
         rows.textContent = '';
         visible.forEach((item, index) => {
             const tr = document.createElement('tr');
@@ -2178,13 +2194,13 @@
             const uniformName = /ឯកសណ្ឋាន|uniform/i.test(String(item.name || ''));
             const previousItem = visible[index - 1];
             const nextItem = visible[index + 1];
-            const continuesUniformGroup = uniformName && previousItem?.name === item.name;
+            const continuesUniformGroup = uniformName && previousItem?.name === item.name && uniformSizes.has(String(item.variant || '').toUpperCase());
             if (!continuesUniformGroup) {
                 const nameCell = document.createElement('td');
                 nameCell.textContent = item.name;
-                if (uniformName && nextItem?.name === item.name) {
+                if (uniformName && nextItem?.name === item.name && uniformSizes.has(String(item.variant || '').toUpperCase())) {
                     let rowSpan = 1;
-                    for (let nextIndex = index + 1; nextIndex < visible.length && visible[nextIndex].name === item.name; nextIndex += 1) rowSpan += 1;
+                    for (let nextIndex = index + 1; nextIndex < visible.length && visible[nextIndex].name === item.name && uniformSizes.has(String(visible[nextIndex].variant || '').toUpperCase()); nextIndex += 1) rowSpan += 1;
                     nameCell.rowSpan = rowSpan;
                     nameCell.style.verticalAlign = 'middle';
                 }
@@ -2194,10 +2210,10 @@
             variantCell.textContent = item.variant;
             tr.append(variantCell);
             const notIssued = Math.max(Number(item.received || 0), 0);
-            [notIssued, Number(item.issued || 0), Number(item.todayIssued || 0)].forEach(value => {
+            [notIssued, Number(item.issued || 0)].forEach(value => {
                 const td = document.createElement('td'); td.textContent = value; tr.append(td);
             });
-            const remaining = Math.max(notIssued - Number(item.issued || 0) - Number(item.todayIssued || 0), 0);
+            const remaining = Math.max(notIssued - Number(item.issued || 0), 0);
             const balanceCell = document.createElement('td'); balanceCell.textContent = remaining; balanceCell.className = `stock-balance${remaining === 0 ? ' stock-warning' : ''}`; tr.append(balanceCell);
             const updatedCell = document.createElement('td'); updatedCell.textContent = item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : '-'; tr.append(updatedCell);
             const actions = document.createElement('td'); actions.className = 'module-actions';
@@ -2213,13 +2229,13 @@
         if (!visible.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 8; td.className = 'module-empty'; td.textContent = 'មិនមានទិន្នន័យ'; tr.append(td); rows.append(tr); }
         section.querySelector('#inventory-types').textContent = inventory.length;
         section.querySelector('#inventory-received').textContent = inventory.reduce((sum, item) => sum + Math.max(Number(item.received || 0), 0), 0).toLocaleString();
-        section.querySelector('#inventory-balance').textContent = inventory.reduce((sum, item) => sum + Math.max(Number(item.received || 0) - Number(item.issued || 0) - Number(item.todayIssued || 0), 0), 0).toLocaleString();
+        section.querySelector('#inventory-balance').textContent = inventory.reduce((sum, item) => sum + Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), 0).toLocaleString();
         section.querySelector('#inventory-count').textContent = `${visible.length} កំណត់ត្រា`;
     };
     form.addEventListener('submit', event => {
         event.preventDefault();
         const data = Object.fromEntries(new FormData(form));
-        data.received = Number(data.received || 0); data.issued = Number(data.issued || 0); data.todayIssued = Number(data.todayIssued || 0);
+        data.received = Number(data.received || 0); data.issued = Number(data.issued || 0);
         data.updatedAt = new Date().toISOString();
         const editId = form.dataset.editId;
         if (editId) inventory = inventory.map(item => item.id === editId ? { ...item, ...data } : item);
@@ -2284,7 +2300,6 @@
                     variant,
                     received: readNumber(row[receivedIndex]),
                     issued: readNumber(row[issuedIndex]),
-                    todayIssued: todayIssuedIndex >= 0 ? readNumber(row[todayIssuedIndex]) : 0,
                     note: noteIndex >= 0 ? String(row[noteIndex] || '').trim() : '',
                     updatedAt: new Date().toISOString()
                 };
@@ -2310,10 +2325,10 @@
     });
     section.querySelector('#inventory-import').addEventListener('click', () => section.querySelector('#inventory-file').click());
     section.querySelector('#inventory-export').addEventListener('click', () => {
-        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'មិនទាន់ដក', 'ចេញសរុប', 'ដកថ្ងៃនេះ', 'នៅសល់', 'បាន update នៅ'];
+        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'មិនទាន់ដក', 'ចេញ', 'នៅសល់', 'បាន update នៅ'];
         const lines = [header, ...inventory.map((item, index) => {
         const notIssued = Math.max(Number(item.received || 0), 0);
-        return [index + 1, item.name, item.variant, notIssued, item.issued, item.todayIssued || 0, Math.max(notIssued - Number(item.issued || 0) - Number(item.todayIssued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''];
+        return [index + 1, item.name, item.variant, notIssued, item.issued, Math.max(notIssued - Number(item.issued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''];
         })];
         if (!window.XLSX) { notify('មិនអាច load Excel export បានទេ។', 'error'); return; }
         const worksheet = XLSX.utils.aoa_to_sheet(lines);
@@ -2322,10 +2337,10 @@
         XLSX.writeFile(workbook, 'stock-materials.xlsx');
     });
     section.querySelector('#inventory-print').addEventListener('click', () => {
-        const todayItems = inventory.filter(item => Number(item.todayIssued || 0) > 0);
+        const todayItems = inventory.filter(item => Number(item.issued || 0) > 0);
         const today = new Date().toLocaleDateString('km-KH');
-        const total = todayItems.reduce((sum, item) => sum + Number(item.todayIssued || 0), 0);
-        printSheet.innerHTML = `<h1>តារាងដកសម្ភារៈប្រចាំថ្ងៃ</h1><p>កាលបរិច្ឆេទ៖ ${today}</p><table><thead><tr><th>ល.រ</th><th>ឈ្មោះសម្ភារៈ</th><th>ប្រភេទ</th><th>ចំនួនដកថ្ងៃនេះ</th><th>សម្គាល់</th></tr></thead><tbody>${todayItems.map((item, index) => `<tr><td>${index + 1}</td><td>${esc(item.name)}</td><td>${esc(item.variant)}</td><td>${Number(item.todayIssued || 0)}</td><td>${esc(item.note || '')}</td></tr>`).join('') || '<tr><td colspan="5">មិនទាន់មានសម្ភារៈត្រូវដកថ្ងៃនេះ</td></tr>'}<tr class="print-total"><td colspan="3">សរុប</td><td>${total}</td><td></td></tr></tbody></table>`;
+        const total = todayItems.reduce((sum, item) => sum + Number(item.issued || 0), 0);
+        printSheet.innerHTML = `<h1>តារាងដកសម្ភារៈប្រចាំថ្ងៃ</h1><p>កាលបរិច្ឆេទ៖ ${today}</p><table><thead><tr><th>ល.រ</th><th>ឈ្មោះសម្ភារៈ</th><th>ប្រភេទ</th><th>ចំនួនចេញ</th><th>សម្គាល់</th></tr></thead><tbody>${todayItems.map((item, index) => `<tr><td>${index + 1}</td><td>${esc(item.name)}</td><td>${esc(item.variant)}</td><td>${Number(item.issued || 0)}</td><td>${esc(item.note || '')}</td></tr>`).join('') || '<tr><td colspan="5">មិនទាន់មានសម្ភារៈត្រូវដកថ្ងៃនេះ</td></tr>'}<tr class="print-total"><td colspan="3">សរុប</td><td>${total}</td><td></td></tr></tbody></table>`;
         document.body.classList.add('inventory-printing');
         window.print();
     });
@@ -2334,10 +2349,10 @@
     const saveDailySnapshot = () => {
         const snapshotDate = new Date().toISOString().slice(0, 10);
         if (localStorage.getItem(snapshotKey) === snapshotDate) return;
-        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'មិនទាន់ដក', 'ចេញសរុប', 'ដកថ្ងៃនេះ', 'នៅសល់', 'បាន update នៅ'];
+        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'មិនទាន់ដក', 'ចេញ', 'នៅសល់', 'បាន update នៅ'];
         const lines = [header, ...inventory.map((item, index) => {
             const notIssued = Math.max(Number(item.received || 0), 0);
-            return [index + 1, item.name, item.variant, notIssued, item.issued, item.todayIssued || 0, Math.max(notIssued - Number(item.issued || 0) - Number(item.todayIssued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''];
+            return [index + 1, item.name, item.variant, notIssued, item.issued, Math.max(notIssued - Number(item.issued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : ''];
         })];
         if (window.XLSX) {
             const worksheet = XLSX.utils.aoa_to_sheet(lines);

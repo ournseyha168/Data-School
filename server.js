@@ -332,4 +332,14 @@ app.post('/api/upload', async (request, response) => {
     }
 });
 
+app.use((error, _request, response, next) => {
+    if (error?.type === 'entity.parse.failed') {
+        response.status(400).json({
+            error: 'Excel sent invalid JSON. Check quotes, line breaks, and special characters in the cells.'
+        });
+        return;
+    }
+    next(error);
+});
+
 app.listen(port, () => console.log(`System Data School server listening on port ${port}`));
