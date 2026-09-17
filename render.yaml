@@ -15,7 +15,7 @@ services:
         sync: false
       - key: SUPABASE_BUCKET
         value: school-files
-      - key: EXCEL_SYNC_TOKEN
+      - key: rnd_3HOwiW0ptRZrHES4CvtYfijqLb8F
         sync: false
     headers:
       - path: /*
