@@ -8,6 +8,7 @@ const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABAS
 const ownerUsername = process.env.OWNER_USERNAME || 'owner';
 const ownerPassword = process.env.OWNER_PASSWORD || '@Seyha1525@';
 const supabaseBucket = process.env.SUPABASE_BUCKET || 'school-files';
+const excelSyncToken = String(process.env.EXCEL_SYNC_TOKEN || '').trim();
 let exchangeRateCache = null;
 const exchangeRateCacheTtlMs = 60 * 60 * 1000;
 let storageCache = null;
@@ -254,6 +255,58 @@ app.put('/api/storage', async (request, response) => {
     } catch (error) {
         console.error(error);
         response.status(503).json({ error: 'Cloud storage is not configured or unavailable.', detail: error.message });
+    }
+});
+
+app.post('/api/inventory-sync', async (request, response) => {
+    if (!excelSyncToken || request.get('x-excel-sync-token') !== excelSyncToken) {
+        response.status(401).json({ error: 'Excel sync token is invalid or not configured.' });
+        return;
+    }
+    const incomingItems = request.body?.items;
+    if (!Array.isArray(incomingItems)) {
+        response.status(400).json({ error: 'items must be an array.' });
+        return;
+    }
+    const cleanItems = incomingItems
+        .map(item => ({
+            id: String(item?.id || '').trim(),
+            name: String(item?.name || '').trim(),
+            variant: String(item?.variant || '').trim() || '-',
+            received: Math.max(0, Number(item?.received) || 0),
+            issued: Math.max(0, Number(item?.issued) || 0),
+            note: String(item?.note || '').trim(),
+            updatedAt: item?.updatedAt || new Date().toISOString()
+        }))
+        .filter(item => item.name);
+    if (!cleanItems.length) {
+        response.status(400).json({ error: 'At least one inventory item with a name is required.' });
+        return;
+    }
+    try {
+        const rows = await supabaseRequest('school_storage?id=eq.main&select=data&limit=1');
+        const data = rows[0]?.data && typeof rows[0].data === 'object' ? rows[0].data : {};
+        const existingItems = Array.isArray(JSON.parse(data['seyha-material-inventory'] || '[]'))
+            ? JSON.parse(data['seyha-material-inventory'])
+            : [];
+        const merged = [...existingItems];
+        cleanItems.forEach(item => {
+            const index = merged.findIndex(existing => existing.name === item.name && existing.variant === item.variant);
+            if (index >= 0) merged[index] = { ...merged[index], ...item, id: merged[index].id || item.id };
+            else merged.push({ ...item, id: item.id || `material-${Date.now()}-${merged.length}` });
+        });
+        data['seyha-material-inventory'] = JSON.stringify(merged);
+        await supabaseRequest('school_storage?on_conflict=id', {
+            method: 'POST',
+            headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+            body: JSON.stringify({ id: 'main', data })
+        });
+        storageCache = data;
+        storageCacheAt = Date.now();
+        response.json({ ok: true, updated: cleanItems.length, items: merged });
+    } catch (error) {
+        console.error('Excel inventory sync failed.', error);
+        response.status(503).json({ error: 'Unable to save Excel inventory to cloud storage.' });
     }
 });
 

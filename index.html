@@ -926,6 +926,7 @@
                 }
             }, 700);
         };
+        window.addEventListener('seyha-storage-changed', syncRemoteStorage);
         const save = () => { localStorage.setItem('seyha-students', JSON.stringify(store.students)); localStorage.setItem('seyha-grades', JSON.stringify(store.grades)); localStorage.setItem('seyha-attendance', JSON.stringify(store.attendance)); localStorage.setItem('seyha-classes', JSON.stringify(store.classes)); render(); syncRemoteStorage(); };
         const parseStoredValue = (key, fallback) => {
             try {
@@ -963,6 +964,7 @@
                     window.refreshSchoolModules?.();
                 }
                 if (!Object.keys(remoteData).length) syncRemoteStorage();
+                window.dispatchEvent(new CustomEvent('seyha-remote-loaded'));
                 return true;
             } catch (error) {
                 console.warn('Cloud storage unavailable; continuing with local browser storage.', error);
@@ -1558,6 +1560,9 @@
         render();
         if (hasActiveSession) { unlock(); setDataLoading(true); initializeRemoteStorage().finally(() => setDataLoading(false)); }
         checkCloudStatus();
+        window.setInterval(() => {
+            if (currentRole) initializeRemoteStorage().catch(error => console.warn('Automatic cloud refresh failed.', error));
+        }, 30000);
         document.getElementById('certificate-template-file').accept = '.pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp';
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -2111,24 +2116,28 @@
         <div class="panel">
             <div class="panel-head">
                 <div><h2>ស្តុកសម្ភារៈ</h2><p class="sub">តារាងគ្រប់គ្រងសម្ភារៈ តាមទម្រង់ Excel</p></div>
-                <button class="btn ghost" type="button" id="inventory-export">នាំចេញ CSV</button>
+                <div class="header-actions">
+                    <button class="btn ghost" type="button" id="inventory-import">នាំចូល Excel</button>
+                    <input id="inventory-file" type="file" accept=".xlsx,.xls,.csv" hidden>
+                    <button class="btn ghost" type="button" id="inventory-export">នាំចេញ Excel</button>
+                </div>
             </div>
             <form class="inventory-form form-grid" id="inventory-form">
                 <label>ឈ្មោះសម្ភារៈ<input name="name" required placeholder="ឧ. ឯកសណ្ឋានកីឡា"></label>
-                <label>ប្រភេទ/ទំហំ<input name="variant" required placeholder="ឧ. M ឬ សៀវភៅ"></label>
-                <label>ចំនួនបញ្ចូល<input name="received" type="number" min="0" step="1" value="0" required></label>
-                <label>ចំនួនបញ្ចេញ<input name="issued" type="number" min="0" step="1" value="0" required></label>
+                <label>ប្រភេទ<input name="variant" required placeholder="ឧ. M ឬ សៀវភៅ"></label>
+                <label>ចំនួននៅ<input name="received" type="number" min="0" step="1" value="0" required></label>
+                <label>ចំនួនចេញ<input name="issued" type="number" min="0" step="1" value="0" required></label>
                 <label>សម្គាល់<input name="note" placeholder="សម្គាល់បន្ថែម"></label>
                 <div class="form-actions"><button class="btn" type="submit">បន្ថែមសម្ភារៈ</button><button class="btn ghost" type="reset">សម្អាត</button></div>
             </form>
             <div class="inventory-summary">
                 <div class="card"><span class="label">ប្រភេទសម្ភារៈ</span><div class="number" id="inventory-types">0</div></div>
-                <div class="card"><span class="label">ចំនួនបញ្ចូលសរុប</span><div class="number" id="inventory-received">0</div></div>
-                <div class="card"><span class="label">ស្តុកសល់សរុប</span><div class="number" id="inventory-balance">0</div></div>
+                <div class="card"><span class="label">ចំនួននៅសរុប</span><div class="number" id="inventory-received">0</div></div>
+                <div class="card"><span class="label">ចំនួននៅសល់សរុប</span><div class="number" id="inventory-balance">0</div></div>
             </div>
-            <div class="inventory-toolbar"><input id="inventory-search" type="search" placeholder="ស្វែងរកឈ្មោះ ឬប្រភេទ/ទំហំ..."><span class="muted" id="inventory-count"></span></div>
+            <div class="inventory-toolbar"><input id="inventory-search" type="search" placeholder="ស្វែងរកឈ្មោះ ឬប្រភេទ..."><span class="muted" id="inventory-count"></span></div>
             <div class="table-wrap"><table class="module-table inventory-table">
-                <thead><tr><th>ល.រ</th><th>ឈ្មោះសម្ភារៈ</th><th>ប្រភេទ/ទំហំ</th><th>ចំនួនបញ្ចូល</th><th>ចំនួនបញ្ចេញ</th><th>ស្តុកសល់</th><th>សម្គាល់</th><th>សកម្មភាព</th></tr></thead>
+                <thead><tr><th>ល.រ</th><th>ឈ្មោះសម្ភារៈ</th><th>ប្រភេទ</th><th>ចំនួននៅ</th><th>ចំនួនចេញ</th><th>ចំនួននៅសល់</th><th>បាន update នៅ</th><th>សម្គាល់</th><th>សកម្មភាព</th></tr></thead>
                 <tbody id="inventory-rows"></tbody>
             </table></div>
         </div>`;
@@ -2141,13 +2150,29 @@
         const query = search.value.trim().toLowerCase();
         const visible = inventory.filter(item => `${item.name} ${item.variant} ${item.note}`.toLowerCase().includes(query));
         rows.textContent = '';
+        const groupedNames = new Map();
+        visible.forEach(item => groupedNames.set(item.name, (groupedNames.get(item.name) || 0) + 1));
+        const renderedNames = new Set();
         visible.forEach((item, index) => {
             const balance = Math.max(Number(item.received || 0) - Number(item.issued || 0), 0);
             const tr = document.createElement('tr');
-            [index + 1, item.name, item.variant, Number(item.received || 0), Number(item.issued || 0)].forEach(value => {
+            [index + 1].forEach(value => {
+                const td = document.createElement('td'); td.textContent = value; tr.append(td);
+            });
+            if (!renderedNames.has(item.name)) {
+                const nameCell = document.createElement('td');
+                nameCell.textContent = item.name;
+                nameCell.rowSpan = groupedNames.get(item.name);
+                nameCell.style.verticalAlign = 'middle';
+                tr.append(nameCell);
+                renderedNames.add(item.name);
+            }
+            const variantCell = document.createElement('td'); variantCell.textContent = item.variant; tr.append(variantCell);
+            [Number(item.received || 0), Number(item.issued || 0)].forEach(value => {
                 const td = document.createElement('td'); td.textContent = value; tr.append(td);
             });
             const balanceCell = document.createElement('td'); balanceCell.textContent = balance; balanceCell.className = `stock-balance${balance === 0 ? ' stock-warning' : ''}`; tr.append(balanceCell);
+            const updatedCell = document.createElement('td'); updatedCell.textContent = item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : '-'; tr.append(updatedCell);
             const noteCell = document.createElement('td'); noteCell.textContent = item.note || '-'; tr.append(noteCell);
             const actions = document.createElement('td'); actions.className = 'module-actions';
             const edit = document.createElement('button'); edit.className = 'btn ghost'; edit.type = 'button'; edit.textContent = 'កែប្រែ';
@@ -2156,10 +2181,10 @@
                 form.dataset.editId = item.id; form.querySelector('button[type="submit"]').textContent = 'រក្សាទុកការកែប្រែ'; form.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
             const remove = document.createElement('button'); remove.className = 'btn danger'; remove.type = 'button'; remove.textContent = 'លុប';
-            remove.addEventListener('click', () => { inventory = inventory.filter(row => row.id !== item.id); saveInventory(); render(); });
+            remove.addEventListener('click', () => { inventory = inventory.filter(row => row.id !== item.id); saveInventory(); window.dispatchEvent(new CustomEvent('seyha-storage-changed')); render(); });
             actions.append(edit, remove); tr.append(actions); rows.append(tr);
         });
-        if (!visible.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 8; td.className = 'module-empty'; td.textContent = 'មិនមានទិន្នន័យ'; tr.append(td); rows.append(tr); }
+        if (!visible.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 9; td.className = 'module-empty'; td.textContent = 'មិនមានទិន្នន័យ'; tr.append(td); rows.append(tr); }
         section.querySelector('#inventory-types').textContent = inventory.length;
         section.querySelector('#inventory-received').textContent = inventory.reduce((sum, item) => sum + Number(item.received || 0), 0).toLocaleString();
         section.querySelector('#inventory-balance').textContent = inventory.reduce((sum, item) => sum + Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), 0).toLocaleString();
@@ -2169,6 +2194,7 @@
         event.preventDefault();
         const data = Object.fromEntries(new FormData(form));
         data.received = Number(data.received || 0); data.issued = Number(data.issued || 0);
+        data.updatedAt = new Date().toISOString();
         const editId = form.dataset.editId;
         if (editId) inventory = inventory.map(item => item.id === editId ? { ...item, ...data } : item);
         else inventory.push({ ...data, id: `material-${Date.now()}` });
@@ -2176,18 +2202,121 @@
     });
     form.addEventListener('reset', () => { delete form.dataset.editId; setTimeout(() => { form.querySelector('button[type="submit"]').textContent = 'បន្ថែមសម្ភារៈ'; }, 0); });
     search.addEventListener('input', render);
-    section.querySelector('#inventory-export').addEventListener('click', () => {
-        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ/ទំហំ', 'ចំនួនបញ្ចូល', 'ចំនួនបញ្ចេញ', 'ស្តុកសល់', 'សម្គាល់'];
-        const lines = [header, ...inventory.map((item, index) => [index + 1, item.name, item.variant, item.received, item.issued, Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), item.note || ''])];
-        const csv = '\uFEFF' + lines.map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\n');
-        const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); link.download = 'stock-materials.csv'; link.click(); URL.revokeObjectURL(link.href);
+    const notifyStorageChanged = () => window.dispatchEvent(new CustomEvent('seyha-storage-changed'));
+    const uploadSourceFile = async file => {
+        const reader = new FileReader();
+        const data = await new Promise((resolve, reject) => {
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error || new Error('Unable to read Excel file.'));
+            reader.readAsDataURL(file);
+        });
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: `inventory/${Date.now()}-${file.name}`, fileName: file.name, mimeType: file.type || 'application/octet-stream', data })
+        });
+        if (!response.ok) throw new Error('Cloud upload failed.');
+        return response.json();
+    };
+    const parseInventoryRows = async file => {
+        if (file.name.toLowerCase().endsWith('.csv')) {
+            const text = await file.text();
+            return text.trim().split(/\r?\n/).filter(Boolean).map(line => line.split(','));
+        }
+        if (!window.XLSX) throw new Error('Excel reader is unavailable.');
+        const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+        return XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: '' });
+    };
+    const findColumn = (headers, aliases) => headers.findIndex(header => aliases.includes(String(header).trim().toLowerCase()));
+    const readNumber = value => Math.max(0, Number(String(value ?? '').replace(/,/g, '').trim()) || 0);
+    section.querySelector('#inventory-file').addEventListener('change', async event => {
+        const file = event.target.files[0];
+        event.target.value = '';
+        if (!file) return;
+        try {
+            const matrix = await parseInventoryRows(file);
+            const headerIndex = matrix.findIndex(row => row.some(cell => ['ឈ្មោះសម្ភារៈ', 'ឈ្មោះ', 'material', 'name'].includes(String(cell).trim().toLowerCase())));
+            if (headerIndex < 0) throw new Error('រកមិនឃើញជួរឈរ ឈ្មោះសម្ភារៈ ក្នុង Excel ទេ។');
+            const headers = matrix[headerIndex].map(cell => String(cell).trim().toLowerCase());
+            const nameIndex = findColumn(headers, ['ឈ្មោះសម្ភារៈ', 'ឈ្មោះ', 'material', 'name']);
+            const variantIndex = findColumn(headers, ['ប្រភេទ/ទំហំ', 'ប្រភេទ', 'ទំហំ', 'variant', 'size', 'type']);
+            const receivedIndex = findColumn(headers, ['ចំនួននៅ', 'ចំនួនបញ្ចូល', 'ចំនួនបានទទួល', 'received', 'in', 'ចូល']);
+            const issuedIndex = findColumn(headers, ['ចំនួនចេញ', 'ចំនួនបញ្ចេញ', 'issued', 'out', 'ចេញ']);
+            const noteIndex = findColumn(headers, ['សម្គាល់', 'note', 'remark']);
+            let imported = 0;
+            matrix.slice(headerIndex + 1).forEach(row => {
+                const name = String(row[nameIndex] || '').trim();
+                if (!name) return;
+                const variant = String(row[variantIndex] || '').trim() || '-';
+                const existing = inventory.find(item => item.name === name && item.variant === variant);
+                const data = {
+                    name,
+                    variant,
+                    received: readNumber(row[receivedIndex]),
+                    issued: readNumber(row[issuedIndex]),
+                    note: noteIndex >= 0 ? String(row[noteIndex] || '').trim() : '',
+                    updatedAt: new Date().toISOString()
+                };
+                if (existing) Object.assign(existing, data);
+                else inventory.push({ ...data, id: `material-${Date.now()}-${imported}` });
+                imported += 1;
+            });
+            if (!imported) throw new Error('Excel មិនមានជួរទិន្នន័យសម្ភារៈទេ។');
+            saveInventory();
+            notifyStorageChanged();
+            render();
+            try {
+                await uploadSourceFile(file);
+                notify(`បាននាំចូល ${imported} ជួរ និង upload Excel ទៅ cloud រួចរាល់។`);
+            } catch (uploadError) {
+                console.warn('Inventory source upload unavailable.', uploadError);
+                notify(`បាននាំចូល ${imported} ជួរ ប៉ុន្តែ cloud upload មិនទាន់បានទេ។`, 'error');
+            }
+        } catch (error) {
+            console.error('Inventory Excel import failed.', error);
+            notify(error.message || 'មិនអាចអាន Excel បានទេ។', 'error');
+        }
     });
+    section.querySelector('#inventory-import').addEventListener('click', () => section.querySelector('#inventory-file').click());
+    section.querySelector('#inventory-export').addEventListener('click', () => {
+        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'ចំនួននៅ', 'ចំនួនចេញ', 'ចំនួននៅសល់', 'បាន update នៅ', 'សម្គាល់'];
+        const lines = [header, ...inventory.map((item, index) => [index + 1, item.name, item.variant, item.received, item.issued, Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : '', item.note || ''])];
+        if (!window.XLSX) { notify('មិនអាច load Excel export បានទេ។', 'error'); return; }
+        const worksheet = XLSX.utils.aoa_to_sheet(lines);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'ស្តុកសម្ភារៈ');
+        XLSX.writeFile(workbook, 'stock-materials.xlsx');
+    });
+    const snapshotKey = 'seyha-material-inventory-last-snapshot';
+    const saveDailySnapshot = () => {
+        const snapshotDate = new Date().toISOString().slice(0, 10);
+        if (localStorage.getItem(snapshotKey) === snapshotDate) return;
+        const header = ['ល.រ', 'ឈ្មោះសម្ភារៈ', 'ប្រភេទ', 'ចំនួននៅ', 'ចំនួនចេញ', 'ចំនួននៅសល់', 'បាន update នៅ', 'សម្គាល់'];
+        const lines = [header, ...inventory.map((item, index) => [index + 1, item.name, item.variant, item.received, item.issued, Math.max(Number(item.received || 0) - Number(item.issued || 0), 0), item.updatedAt ? new Date(item.updatedAt).toLocaleString('km-KH') : '', item.note || ''])];
+        if (window.XLSX) {
+            const worksheet = XLSX.utils.aoa_to_sheet(lines);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'ស្តុកសម្ភារៈ');
+            XLSX.writeFile(workbook, `stock-materials-${snapshotDate}.xlsx`);
+        }
+        localStorage.setItem(snapshotKey, snapshotDate);
+        window.dispatchEvent(new CustomEvent('seyha-storage-changed'));
+        notify(`បានរក្សាទុក file ស្តុកប្រចាំថ្ងៃ ${snapshotDate} នៅម៉ោង 8:00 យប់។`);
+    };
+    const checkDailySnapshot = () => {
+        const now = new Date();
+        if (now.getHours() >= 20) saveDailySnapshot();
+    };
+    checkDailySnapshot();
+    window.setInterval(checkDailySnapshot, 60 * 1000);
     const showInventory = () => {
         document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view === section));
         document.querySelectorAll('.nav button').forEach(button => button.classList.toggle('active', button === navButton));
         const title = document.getElementById('page-title'); if (title) title.textContent = 'ស្តុកសម្ភារៈ';
     };
     navButton.addEventListener('click', showInventory);
+    form.addEventListener('submit', () => notifyStorageChanged());
+    window.addEventListener('seyha-remote-loaded', () => { inventory = readInventory(); render(); });
     render();
 })();
 </script>
