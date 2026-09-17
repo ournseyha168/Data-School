@@ -335,6 +335,10 @@
         .login-form input:hover, .login-form input:focus { border-color: #4b75cf; box-shadow: 0 0 0 3px rgba(75,117,207,.12); }
         .password-field { position: relative; }
         .password-field input { padding-right: 48px; }
+        .password-field input::-ms-reveal,
+        .password-field input::-ms-clear { display:none; width:0; height:0; }
+        .password-field input::-webkit-credentials-auto-fill-button,
+        .password-field input::-webkit-textfield-decoration-container { visibility:hidden; pointer-events:none; }
         .password-toggle { position: absolute; right: 10px; bottom: 9px; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 7px; color: #71809a; background: transparent; }
         .password-toggle:hover { color: #315dbe; background: #eef3f8; }
         .login-form .btn { padding: 13px; border-radius: 9px; color: #fff; background: #315dbe; box-shadow: 0 9px 18px rgba(49,93,190,.18); }
