@@ -1034,13 +1034,28 @@
         const isViewer = () => currentRole === 'user';
         const currentUsername = () => sessionStorage.getItem('seyha-username') || '';
         const permissionLabels = { dashboard: 'ទំព័រដើម', students: 'បញ្ជីសិស្ស', grades: 'តារាងពិន្ទុ', attendance: 'វត្តមាន', classes: 'ថ្នាក់រៀន', teachers: 'គ្រូបង្រៀន', schedule: 'កាលវិភាគ', fees: 'ថ្លៃសិក្សា', staff: 'បុគ្គលិក', announcements: 'សេចក្តីជូនដំណឹង', reports: 'របាយការណ៍', certificates: 'ប័ណ្ណសរសើរ', inventory: 'ស្តុកសម្ភារៈ', backup: 'បម្រុងទុក/ស្ដារ', 'password-reset': 'Reset password' };
-        let userPermissions = JSON.parse(localStorage.getItem('seyha-permissions') || '{}');
+        let userPermissions = {};
+        const hydratePermissionsFromLocalStorage = () => {
+            try {
+                const stored = JSON.parse(localStorage.getItem('seyha-permissions') || '{}');
+                userPermissions = stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+            } catch (error) {
+                console.warn('Saved permissions could not be loaded.', error);
+                userPermissions = {};
+            }
+        };
+        hydratePermissionsFromLocalStorage();
         const hasPermission = view => isOwner() || Array.isArray(userPermissions[currentUsername()]) && userPermissions[currentUsername()].includes(view);
         const applyPermissions = () => {
             document.querySelectorAll('.nav [data-view]').forEach(button => button.classList.toggle('permission-hidden', !hasPermission(button.dataset.view) && !button.classList.contains('owner-only')));
             document.querySelectorAll('main .view[id]').forEach(view => view.classList.toggle('permission-hidden', !hasPermission(view.id) && !view.classList.contains('owner-only')));
         };
         window.refreshNavigationPermissions = applyPermissions;
+        window.addEventListener('storage', event => {
+            if (event.key !== 'seyha-permissions') return;
+            hydratePermissionsFromLocalStorage();
+            applyRole();
+        });
         const canManageClass = item => isOwner() || (isAdmin() && hasPermission('classes')) || (isViewer() && hasPermission('classes') && item?.ownerUsername === currentUsername());
         const accessibleClasses = () => store.classes.filter(item => isOwner() || isAdmin() || isViewer());
         const accessibleStudentIds = () => new Set(accessibleClasses().flatMap(item => Array.isArray(item.studentIds) ? item.studentIds : []));
@@ -1116,7 +1131,15 @@
                 accountList.querySelectorAll('.permission-account').forEach(form => {
                     const username = form.dataset.username;
                     (userPermissions[username] || []).forEach(key => { const input = form.elements[key]; if (input) input.checked = true; });
-                    form.addEventListener('submit', event => { event.preventDefault(); userPermissions[username] = Object.keys(permissionLabels).filter(key => form.elements[key]?.checked); localStorage.setItem('seyha-permissions', JSON.stringify(userPermissions)); syncRemoteStorage(); notify(`បានរក្សាទុកសិទ្ធិសម្រាប់ ${username}។`); });
+                    form.addEventListener('submit', event => {
+                        event.preventDefault();
+                        userPermissions[username] = Object.keys(permissionLabels).filter(key => form.elements[key]?.checked);
+                        localStorage.setItem('seyha-permissions', JSON.stringify(userPermissions));
+                        syncRemoteStorage();
+                        applyRole();
+                        window.dispatchEvent(new CustomEvent('seyha-permissions-updated'));
+                        notify(`បានរក្សាទុកសិទ្ធិសម្រាប់ ${username}។`);
+                    });
                 });
             });
         };
@@ -1193,7 +1216,8 @@
                     hydrateStoreFromLocalStorage();
                     normalizeClassMemberships();
                     localStorage.setItem('seyha-classes', JSON.stringify(store.classes));
-                    applyPermissions();
+                    hydratePermissionsFromLocalStorage();
+                    applyRole();
                     render();
                     window.refreshSchoolModules?.();
                 }
