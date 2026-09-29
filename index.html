@@ -1240,7 +1240,15 @@
                         : '';
                     throw new Error(`Supabase is not configured.${missing}`);
                 }
+                if (!result.databaseReady) {
+                    const checks = Object.values(result.checks || {}).filter(check => !check.ok);
+                    const reason = checks.map(check => check.message).filter(Boolean).join(' ');
+                    status.innerHTML = '<i></i> Cloud setup needed';
+                    status.title = reason || 'Supabase database tables are not ready.';
+                    return;
+                }
                 status.innerHTML = '<i></i> Cloud connected';
+                status.title = 'Supabase database is ready.';
             } catch (error) {
                 status.innerHTML = '<i></i> Local mode';
                 status.title = error.message;

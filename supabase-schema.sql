@@ -30,10 +30,13 @@ for each row execute function public.touch_managed_accounts_updated_at();
 
 alter table public.managed_accounts enable row level security;
 revoke all on table public.managed_accounts from anon, authenticated;
+grant usage on schema public to service_role;
+grant select, insert, update, delete on table public.managed_accounts to service_role;
 
 alter table public.school_storage enable row level security;
 
 revoke all on table public.school_storage from anon, authenticated;
+grant select, insert, update, delete on table public.school_storage to service_role;
 
 create or replace function public.touch_school_storage_updated_at()
 returns trigger

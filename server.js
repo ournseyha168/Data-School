@@ -24,11 +24,52 @@ app.use(express.json({
 }));
 app.use(express.static('.'));
 
-app.get('/api/health', (_request, response) => {
+const getSupabaseDiagnostic = error => {
+    const message = String(error?.message || '');
+    const status = Number(error?.status) || null;
+    if (status === 404 || message.includes('PGRST205')) {
+        return { ok: false, message: 'Table is missing. Run supabase-schema.sql in the Supabase SQL Editor.' };
+    }
+    if (status === 401 || status === 403) {
+        return { ok: false, message: 'Supabase rejected the server key. Check SUPABASE_SECRET_KEY in Render.' };
+    }
+    return { ok: false, message: status ? `Supabase request failed (HTTP ${status}).` : 'Could not connect to Supabase.' };
+};
+
+app.get('/api/health', async (_request, response) => {
     const missing = [];
     if (!supabaseUrl) missing.push('SUPABASE_URL');
     if (!supabaseSecretKey) missing.push('SUPABASE_SECRET_KEY');
-    response.json({ ok: true, supabaseConfigured: Boolean(supabaseUrl && supabaseSecretKey), bucketConfigured: Boolean(supabaseBucket), missing });
+    if (missing.length) {
+        response.json({
+            ok: true,
+            supabaseConfigured: false,
+            databaseReady: false,
+            bucketConfigured: Boolean(supabaseBucket),
+            missing
+        });
+        return;
+    }
+
+    const [accounts, schoolStorage] = await Promise.allSettled([
+        supabaseRequest('managed_accounts?select=username&limit=0'),
+        supabaseRequest('school_storage?select=id&limit=0')
+    ]);
+    const managedAccounts = accounts.status === 'fulfilled'
+        ? { ok: true }
+        : getSupabaseDiagnostic(accounts.reason);
+    const storage = schoolStorage.status === 'fulfilled'
+        ? { ok: true }
+        : getSupabaseDiagnostic(schoolStorage.reason);
+    const databaseReady = managedAccounts.ok && storage.ok;
+    response.json({
+        ok: true,
+        supabaseConfigured: true,
+        databaseReady,
+        bucketConfigured: Boolean(supabaseBucket),
+        missing: [],
+        checks: { managedAccounts, schoolStorage: storage }
+    });
 });
 
 app.get('/api/exchange-rate', async (_request, response) => {
@@ -59,7 +100,11 @@ const supabaseRequest = async (path, options = {}) => {
         ...options,
         headers: { apikey: supabaseSecretKey, Authorization: 'Bearer ' + supabaseSecretKey, 'Content-Type': 'application/json', ...(options.headers || {}) }
     });
-    if (!response.ok) throw new Error(`Supabase request failed (${response.status}): ${await response.text()}`);
+    if (!response.ok) {
+        const error = new Error(`Supabase request failed (${response.status}): ${await response.text()}`);
+        error.status = response.status;
+        throw error;
+    }
     const body = await response.text();
     return body ? JSON.parse(body) : null;
 };
@@ -116,7 +161,7 @@ app.post('/api/managed-accounts-list', async (request, response) => {
         response.json({ accounts });
     } catch (error) {
         console.error('Managed account list failed.', error);
-        response.status(503).json({ error: 'Account storage is unavailable. Please try again later.' });
+        response.status(503).json({ error: getSupabaseDiagnostic(error).message });
     }
 });
 
@@ -136,7 +181,7 @@ app.post('/api/delete-managed-account', async (request, response) => {
         response.json({ ok: true });
     } catch (error) {
         console.error('Managed account deletion failed.', error);
-        response.status(503).json({ error: 'Account storage is unavailable. Please try again later.' });
+        response.status(503).json({ error: getSupabaseDiagnostic(error).message });
     }
 });
 
@@ -151,7 +196,7 @@ app.post('/api/role-login', async (request, response) => {
         response.status(401).json({ error: 'Invalid credentials.' });
     } catch (error) {
         console.error('Role login failed.', error);
-        response.status(503).json({ error: 'Account storage is unavailable. Please try again later.' });
+        response.status(503).json({ error: getSupabaseDiagnostic(error).message });
     }
 });
 
@@ -170,7 +215,7 @@ app.post('/api/managed-user-credentials', async (request, response) => {
     } catch (error) {
         if (error.code === 'USERNAME_EXISTS') return response.status(409).json({ error: 'Username នេះមានរួចហើយ។ សូមជ្រើស Username ផ្សេង។' });
         console.error('User account creation failed.', error);
-        response.status(503).json({ error: 'Account storage is unavailable. Please try again later.' });
+        response.status(503).json({ error: getSupabaseDiagnostic(error).message });
     }
 });
 
@@ -186,7 +231,7 @@ app.post('/api/owner/admin-credentials', async (request, response) => {
     } catch (error) {
         if (error.code === 'USERNAME_EXISTS') return response.status(409).json({ error: 'Username នេះមានរួចហើយ។ សូមជ្រើស Username ផ្សេង។' });
         console.error('Admin account creation failed.', error);
-        response.status(503).json({ error: 'Account storage is unavailable. Please try again later.' });
+        response.status(503).json({ error: getSupabaseDiagnostic(error).message });
     }
 });
 
@@ -213,7 +258,7 @@ app.post('/api/reset-managed-password', async (request, response) => {
         response.json({ ok: true });
     } catch (error) {
         console.error('Managed password reset failed.', error);
-        response.status(503).json({ error: 'Account storage is unavailable. Please try again later.' });
+        response.status(503).json({ error: getSupabaseDiagnostic(error).message });
     }
 });
 
