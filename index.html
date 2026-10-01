@@ -260,10 +260,18 @@
         #teachers .module-table .student-photo { display: block; margin: 0 auto; }
         #teachers .module-table .module-actions { justify-content: flex-end; }
         .permission-account .form-grid label { display: flex; align-items: center; gap: 8px; min-height: 34px; }
-        .permission-account .form-grid input[type="checkbox"] { width: 16px; height: 16px; flex: 0 0 auto; margin: 0; }
         label { display: grid; gap: 7px; color: var(--muted); font-size: 12px; }
         input, select { width: 100%; padding: 11px 12px; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; outline: none; background: rgba(4,10,29,.6); }
         input:focus, select:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(84,232,255,.1); }
+        input[type="checkbox"] { display: inline-grid; place-content: center; width: 18px; height: 18px; flex: 0 0 18px; margin: 0; padding: 0; appearance: none; border: 1px solid rgba(154,170,193,.55); border-radius: 5px; background: rgba(4,10,29,.38); cursor: pointer; transition: border-color .16s ease, background .16s ease, transform .16s ease; }
+        input[type="checkbox"]::before { content: ""; width: 9px; height: 5px; border: solid #091522; border-width: 0 0 2px 2px; opacity: 0; transform: translateY(-1px) rotate(-45deg) scale(.75); transition: opacity .12s ease, transform .12s ease; }
+        input[type="checkbox"]:checked { border-color: var(--cyan); background: linear-gradient(135deg, var(--cyan), var(--violet)); }
+        input[type="checkbox"]:checked::before { opacity: 1; transform: translateY(-1px) rotate(-45deg) scale(1); }
+        input[type="checkbox"]:indeterminate { border-color: var(--cyan); background: linear-gradient(135deg, var(--cyan), var(--violet)); }
+        input[type="checkbox"]:indeterminate::before { width: 8px; height: 2px; border: 0; border-radius: 2px; background: #091522; opacity: 1; transform: none; }
+        input[type="checkbox"]:focus { border-color: var(--cyan); box-shadow: none; }
+        input[type="checkbox"]:focus-visible { outline: 2px solid rgba(103,216,232,.36); outline-offset: 2px; }
+        input[type="checkbox"]:disabled { cursor: not-allowed; opacity: .45; }
         select option { color: #edf3ff; background: #111a3a; }
         .panel, .card, .insight-panel, .class-folder, .class-browser-tools, .class-import-form, .class-add-student-form, .module-form, .file-drop, .certificate-controls, .sheet-tools {
             position: relative;
@@ -381,21 +389,38 @@
         .class-folder small { color: var(--muted); }
         .class-selection-tools { display: flex; align-items: center; gap: 12px; }
         .class-selection-tools label { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; cursor: pointer; }
-        .class-selection-tools input, .class-select { width: 17px; height: 17px; accent-color: var(--cyan); }
-        .student-selection-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 0 0 14px; padding: 12px 14px; border: 1px solid rgba(103,216,232,.2); border-radius: 12px; background: linear-gradient(110deg, rgba(103,216,232,.07), rgba(145,169,255,.06)); }
+        .class-selection-tools input, .class-select, .student-selection-bar input, .student-row-select { cursor: pointer; }
+        .student-selection-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(4,10,29,.24); }
+        .student-selection-bar[hidden], .class-selection-tools[hidden] { display: none; }
+        .student-select-cell[hidden] { display: none; }
+        input[type="checkbox"][hidden] { display: none; }
         .student-selection-bar label { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 13px; cursor: pointer; }
-        .student-selection-bar input, .student-row-select { width: 17px; height: 17px; accent-color: var(--cyan); cursor: pointer; }
         .student-selection-count { flex: 1; color: var(--muted); font-size: 12px; }
         .student-selection-count.has-selection { color: var(--cyan); font-weight: 600; }
         .bulk-delete-students:disabled { cursor: not-allowed; opacity: .45; }
         .student-select-cell { width: 42px; text-align: center; }
-        @media (max-width: 680px) { .student-selection-bar { align-items: flex-start; } .student-selection-count { flex-basis: 100%; order: 1; } .student-selection-bar .btn { width: 100%; } }
+        #students.selection-mode .student-selection-bar { border-color: rgba(103,216,232,.24); background: rgba(103,216,232,.045); }
+        @media (max-width: 680px) { .student-selection-bar { align-items: center; } .student-selection-count { flex: 1; } .student-selection-bar .btn { width: auto; } }
         .class-folder { position: relative; }
         .class-folder .class-select { position: absolute; top: 16px; right: 16px; margin: 0; }
+        #classes:not(.selection-mode) .class-folder .class-select { display: none; }
+        #classes.selection-mode .class-folder { padding-right: 48px; }
         .class-open { display: block; width: 100%; min-height: 110px; padding: 0; color: inherit; border: 0; background: transparent; text-align: left; }
         .class-open:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; border-radius: 8px; }
         .class-folder.selected { border-color: var(--violet); background: linear-gradient(145deg, rgba(103,216,232,.16), rgba(145,169,255,.16)); }
         .bulk-delete-class:disabled { cursor: not-allowed; opacity: .45; }
+        .class-selection-tools { flex-wrap: wrap; }
+        .class-selection-tools[hidden] { display: none; }
+        #classes .class-folder.selected { border-color: rgba(103,216,232,.52); background: rgba(103,216,232,.09); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+        .confirm-overlay { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 18px; background: rgba(3,8,18,.68); backdrop-filter: blur(7px); animation: confirmFadeIn .16s ease-out; }
+        .confirm-overlay[hidden] { display: none; }
+        .confirm-card { width: min(100%, 430px); padding: 24px; border: 1px solid rgba(157,182,224,.2); border-radius: 18px; background: linear-gradient(145deg, rgba(22,34,55,.98), rgba(12,21,37,.99)); box-shadow: 0 24px 80px rgba(0,0,0,.42); animation: confirmCardIn .18s ease-out; }
+        .confirm-card h2 { margin: 0 0 9px; font-size: 19px; }
+        .confirm-card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
+        .confirm-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; }
+        .confirm-actions .btn { min-width: 88px; }
+        @keyframes confirmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes confirmCardIn { from { opacity: .7; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
         .class-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 10px; color: var(--muted); font-size: 11px; }
         .class-meta span { color: #c7d5ef; }
         .class-import-form { margin: 14px 0 18px; padding: 16px; border: 1px solid rgba(103,216,232,.2); border-radius: 13px; background: rgba(103,216,232,.045); }
@@ -751,7 +776,7 @@
             max-width: 100%;
         }
         .permission-account .form-grid input[type="checkbox"] {
-            min-height: 20px;
+            min-height: 18px;
         }
 
         @media (max-width: 680px) {
@@ -970,7 +995,7 @@
                 <div class="layout"><div class="panel"><div class="panel-head"><div><h2>សិស្សថ្មីៗ</h2><small>បញ្ជីសិស្សដែលបានបញ្ចូលចុងក្រោយ</small></div><button class="btn ghost" data-go="students">មើលទាំងអស់</button></div><div class="table-wrap"><table><thead><tr><th>រូបថត</th><th>លេខរៀង</th><th>ឈ្មោះខ្មែរ</th><th>ឈ្មោះឡាតាំង</th><th>ភេទ</th><th>ថ្ងៃខែឆ្នាំកំណើត</th></tr></thead><tbody id="recent-students"></tbody></table></div></div></div>
             </section>
 
-            <section class="view" id="students"><div class="panel"><div class="panel-head"><div><h2>បញ្ជីសិស្ស</h2><small>បញ្ចូល និងរក្សាទុកព័ត៌មានសិស្ស</small></div><div class="header-actions"><button class="btn ghost admin-only" id="import-students">នាំចូល Excel</button><input id="student-file" type="file" accept=".xlsx,.xls,.csv" multiple hidden><button class="btn" id="show-student-form">+ បញ្ចូលសិស្ស</button></div></div><form id="student-form" hidden><div class="form-grid"><label>ឈ្មោះសិស្ស (ខ្មែរ)<input name="name" required placeholder="ឧ. សុខ សុវណ្ណ"></label><label>ឈ្មោះសិស្ស (ឡាតាំង)<input name="latinName" placeholder="ឧ. Sok Sovann"></label><label>លេខសម្គាល់សិស្ស<input name="studentId" placeholder="ឧ. ST-2026-001"></label><label>ភេទ<select name="gender"><option value="ប">ប</option><option value="ស">ស</option></select></label><label>ថ្ងៃខែឆ្នាំកំណើត<input name="dob" placeholder="ឧ. 15/03/2012" inputmode="numeric"></label><label>ឈ្មោះអាណាព្យាបាល<input name="guardianName" placeholder="ឈ្មោះមាតាបិតា"></label><label>ទូរស័ព្ទអាណាព្យាបាល<input name="guardianPhone" type="tel" placeholder="012 345 678"></label><label>អាសយដ្ឋាន<input name="address" placeholder="ភូមិ ឃុំ ស្រុក"></label><label>ស្ថានភាព<select name="status"><option value="សកម្ម">សកម្ម</option><option value="ផ្អាក">ផ្អាក</option><option value="បានបញ្ចប់">បានបញ្ចប់</option></select></label><label>ថ្ងៃចុះឈ្មោះ<input name="enrollmentDate" type="date"></label><label>រូបថតសិស្ស<input id="student-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp"><img id="student-photo-preview" class="student-photo" alt="រូបថតសិស្ស" hidden></label></div><div class="form-actions"><button type="button" class="btn ghost" id="cancel-student">បោះបង់</button><button class="btn" type="submit">រក្សាទុក</button></div></form><div class="toolbar"><input id="student-search" placeholder="ស្វែងរកឈ្មោះខ្មែរ ឬឈ្មោះឡាតាំង..." aria-label="ស្វែងរកសិស្ស"><small id="student-total" class="sub"></small></div><div class="student-selection-bar admin-only"><label><input id="select-all-students" type="checkbox"> ជ្រើសរើសសិស្សដែលបង្ហាញ</label><span class="student-selection-count" id="selected-student-count" aria-live="polite">0 នាក់បានជ្រើសរើស</span><button class="btn danger bulk-delete-students" id="bulk-delete-students" type="button" disabled>លុបសិស្សដែលបានជ្រើសរើស</button></div><div class="table-wrap"><table><thead><tr><th class="student-select-cell admin-only">ជ្រើស</th><th>រូបថត</th><th>លេខរៀង</th><th>ឈ្មោះខ្មែរ</th><th>ឈ្មោះឡាតាំង</th><th>ភេទ</th><th>ថ្ងៃខែឆ្នាំកំណើត</th><th>អាណាព្យាបាល</th><th>ស្ថានភាព</th><th></th></tr></thead><tbody id="student-table"></tbody></table></div></div></section>
+            <section class="view" id="students"><div class="panel"><div class="panel-head"><div><h2>បញ្ជីសិស្ស</h2><small>បញ្ចូល និងរក្សាទុកព័ត៌មានសិស្ស</small></div><div class="header-actions"><button class="btn ghost admin-only" id="import-students">នាំចូល Excel</button><input id="student-file" type="file" accept=".xlsx,.xls,.csv" multiple hidden><button class="btn ghost admin-only" id="toggle-student-selection" type="button">កែ</button><button class="btn" id="show-student-form">+ បញ្ចូលសិស្ស</button></div></div><form id="student-form" hidden><div class="form-grid"><label>ឈ្មោះសិស្ស (ខ្មែរ)<input name="name" required placeholder="ឧ. សុខ សុវណ្ណ"></label><label>ឈ្មោះសិស្ស (ឡាតាំង)<input name="latinName" placeholder="ឧ. Sok Sovann"></label><label>លេខសម្គាល់សិស្ស<input name="studentId" placeholder="ឧ. ST-2026-001"></label><label>ភេទ<select name="gender"><option value="ប">ប</option><option value="ស">ស</option></select></label><label>ថ្ងៃខែឆ្នាំកំណើត<input name="dob" placeholder="ឧ. 15/03/2012" inputmode="numeric"></label><label>ឈ្មោះអាណាព្យាបាល<input name="guardianName" placeholder="ឈ្មោះមាតាបិតា"></label><label>ទូរស័ព្ទអាណាព្យាបាល<input name="guardianPhone" type="tel" placeholder="012 345 678"></label><label>អាសយដ្ឋាន<input name="address" placeholder="ភូមិ ឃុំ ស្រុក"></label><label>ស្ថានភាព<select name="status"><option value="សកម្ម">សកម្ម</option><option value="ផ្អាក">ផ្អាក</option><option value="បានបញ្ចប់">បានបញ្ចប់</option></select></label><label>ថ្ងៃចុះឈ្មោះ<input name="enrollmentDate" type="date"></label><label>រូបថតសិស្ស<input id="student-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp"><img id="student-photo-preview" class="student-photo" alt="រូបថតសិស្ស" hidden></label></div><div class="form-actions"><button type="button" class="btn ghost" id="cancel-student">បោះបង់</button><button class="btn" type="submit">រក្សាទុក</button></div></form><div class="toolbar"><input id="student-search" placeholder="ស្វែងរកឈ្មោះខ្មែរ ឬឈ្មោះឡាតាំង..." aria-label="ស្វែងរកសិស្ស"><small id="student-total" class="sub"></small></div><div class="student-selection-bar admin-only" hidden><label><input id="select-all-students" type="checkbox"> ជ្រើសរើសទាំងអស់</label><span class="student-selection-count" id="selected-student-count" aria-live="polite">0 នាក់បានជ្រើសរើស</span><button class="btn danger bulk-delete-students" id="bulk-delete-students" type="button" disabled>លុប</button></div><div class="table-wrap"><table><thead><tr><th class="student-select-cell admin-only" hidden></th><th>រូបថត</th><th>លេខរៀង</th><th>ឈ្មោះខ្មែរ</th><th>ឈ្មោះឡាតាំង</th><th>ភេទ</th><th>ថ្ងៃខែឆ្នាំកំណើត</th><th>អាណាព្យាបាល</th><th>ស្ថានភាព</th><th></th></tr></thead><tbody id="student-table"></tbody></table></div></div></section>
 
             <section class="view" id="grades"><div class="panel"><div class="panel-head"><div><h2>តារាងពិន្ទុសិស្ស</h2><small>បន្ថែមសិស្សបានមិនកំណត់ និងកែឈ្មោះផ្ទាល់ក្នុងតារាងដូច Excel</small></div><div class="print-hide"><button class="btn" id="add-grade-student">+ បន្ថែមសិស្ស/ជួរ</button><button class="btn ghost admin-only" id="import-grade-template">យកទិន្នន័យពី Excel</button><input id="grade-template-file" type="file" accept=".xlsx,.xls,.csv" hidden><button class="btn ghost admin-only" id="export-grades">ទាញយក Excel</button><button class="btn" id="print-grades">Print</button></div></div><div class="grade-settings print-hide"><h3>កំណត់តារាងដោយខ្លួនឯង</h3><label>ឈ្មោះសាលា<input id="school-name" placeholder="ឧ. Rigen International School"></label><label>គ្រូបន្ទុកថ្នាក់<input id="teacher-name" placeholder="ឧ. លោកគ្រូ សុខា"></label><label>ខែ/រយៈពេលចេញតារាង<input id="report-month" placeholder="ឧ. មិថុនា ២០២៦"></label><label>Font<select id="report-font"><option value="Kantumruy Pro">Kantumruy Pro</option><option value="Arial">Arial</option><option value="Tahoma">Tahoma</option><option value="Khmer OS Battambang">Khmer OS Battambang</option><option value="Noto Sans Khmer">Noto Sans Khmer</option></select></label><label class="logo-picker">Logo<input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp"><img id="logo-preview" class="logo-preview" alt="Logo preview"></label></div><div class="print-meta"><img id="report-logo" class="report-logo" alt="School logo"><h1 id="print-school">Seyha School</h1><p>តារាងពិន្ទុសិស្ស · <span id="print-month"></span></p><p>គ្រូបន្ទុកថ្នាក់៖ <span id="print-teacher"></span></p></div><div class="sheet-tools print-hide"><span class="sheet-mark">Spreadsheet</span><input class="formula-bar" id="formula-bar" readonly placeholder="ជ្រើសរើស cell មួយ ដើម្បីមើលតម្លៃ"></div><div class="sheet-scroll"><table class="grade-table"><thead><tr><th>ល.រ</th><th>ឈ្មោះសិស្ស</th><th>ភេទ</th><th>វត្តមាន</th><th>កិច្ចការផ្ទះ</th><th>កិច្ចការសាលា</th><th>សរសេរតាមអាន</th><th>ភាសាអង់គ្លេស</th><th>ភាសាខ្មែរ</th><th>គណិតវិទ្យា</th><th>ភាសាចិន</th><th>ពិន្ទុសរុប</th><th>ចំណាត់ថ្នាក់</th><th>និទ្ទេស</th></tr></thead><tbody id="grade-table"></tbody></table></div><div class="notice print-hide">ពិន្ទុទទេមិនត្រូវបានរាប់ក្នុងពិន្ទុសរុប និងនឹងនៅទទេពេល Print។ ចំណាត់ថ្នាក់ជាលេខ 1, 2, 3 តាមពិន្ទុសរុប; និទ្ទេស៖ 90–100 A · 86–89 B+ · 80–85 B · 76–79 C+ · 70–75 C · 50–69 D · ក្រោម 50 F។ បើគ្មានសិស្សណាមានពិន្ទុសរុបដល់ 90 សិស្សលេខ 1 នឹងទទួល A។</div></div></section>
 
@@ -982,6 +1007,16 @@
         </main>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <div class="confirm-overlay" id="confirm-overlay" hidden>
+        <section class="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+            <h2 id="confirm-title"></h2>
+            <p id="confirm-message"></p>
+            <div class="confirm-actions">
+                <button class="btn ghost" id="confirm-cancel" type="button">បោះបង់</button>
+                <button class="btn danger" id="confirm-accept" type="button">លុប</button>
+            </div>
+        </section>
+    </div>
     <script>
         let toastTimer;
         const notify = (message, type = 'success') => {
@@ -992,6 +1027,41 @@
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => { toast.className = 'toast'; }, 3600);
         };
+        const confirmAction = ({ title, message, confirmLabel = 'លុប', danger = true }) => new Promise(resolve => {
+            const overlay = document.getElementById('confirm-overlay');
+            const cancelButton = document.getElementById('confirm-cancel');
+            const acceptButton = document.getElementById('confirm-accept');
+            const previousFocus = document.activeElement;
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            acceptButton.textContent = confirmLabel;
+            acceptButton.classList.toggle('danger', danger);
+            overlay.hidden = false;
+            cancelButton.focus();
+            const finish = accepted => {
+                overlay.hidden = true;
+                cancelButton.removeEventListener('click', cancel);
+                acceptButton.removeEventListener('click', accept);
+                overlay.removeEventListener('click', backdrop);
+                document.removeEventListener('keydown', onKeydown);
+                if (previousFocus instanceof HTMLElement) previousFocus.focus();
+                resolve(accepted);
+            };
+            const cancel = () => finish(false);
+            const accept = () => finish(true);
+            const backdrop = event => { if (event.target === overlay) cancel(); };
+            const onKeydown = event => {
+                if (event.key === 'Escape') { event.preventDefault(); cancel(); }
+                if (event.key === 'Tab') {
+                    event.preventDefault();
+                    (document.activeElement === cancelButton ? acceptButton : cancelButton).focus();
+                }
+            };
+            cancelButton.addEventListener('click', cancel);
+            acceptButton.addEventListener('click', accept);
+            overlay.addEventListener('click', backdrop);
+            document.addEventListener('keydown', onKeydown);
+        });
         const fileToBase64 = file => new Promise((resolve, reject) => {
             if (!file || !file.size) { resolve(''); return; }
             const reader = new FileReader();
@@ -1084,7 +1154,7 @@
                 list.innerHTML = visible.map(account => `<div class="panel permission-account"><div class="panel-head"><div><h3>${esc(account.username)}</h3><small>${account.role === 'admin' ? 'Admin' : 'Teacher'}</small></div><div class="account-actions"><button class="btn danger" type="button" data-delete-account="${esc(account.username)}">លុប Account</button></div></div></div>`).join('') || '<p class="empty">មិនមាន Account ត្រូវនឹងការស្វែងរកទេ។</p>';
                 list.querySelectorAll('[data-delete-account]').forEach(button => button.addEventListener('click', async () => {
                     const username = button.dataset.deleteAccount;
-                    if (!window.confirm(`តើអ្នកពិតជាចង់លុប account "${username}" មែនទេ?`)) return;
+                    if (!await confirmAction({ title: 'លុប Account?', message: `តើអ្នកចង់លុប Account "${username}" មែនទេ?` })) return;
                     const response = await fetch('/api/delete-managed-account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ownerPassword, targetUsername: username }) });
                     const result = await response.json().catch(() => ({}));
                     if (!response.ok) { error.textContent = result.error || 'មិនអាចលុប Account បានទេ។'; return; }
@@ -1339,6 +1409,8 @@
         let selectedClassId = null;
         const selectedClassIds = new Set();
         const selectedStudentIds = new Set();
+        let classSelectionMode = false;
+        let studentSelectionMode = false;
         const removeStudents = students => {
             const ids = new Set(students.map(student => student.id));
             if (!ids.size) return 0;
@@ -1398,6 +1470,32 @@
             detail.hidden = false;
         };
         const renderClasses = () => {
+            if (!isAdmin()) {
+                classSelectionMode = false;
+                selectedClassIds.clear();
+            }
+            const classBrowserTools = document.querySelector('#classes .class-browser-tools');
+            if (classBrowserTools && !document.getElementById('toggle-class-selection')) {
+                const toggleButton = document.createElement('button');
+                toggleButton.id = 'toggle-class-selection';
+                toggleButton.className = 'btn ghost admin-only';
+                toggleButton.type = 'button';
+                toggleButton.textContent = 'កែ';
+                toggleButton.addEventListener('click', () => {
+                    if (!isAdmin()) return;
+                    classSelectionMode = !classSelectionMode;
+                    if (!classSelectionMode) selectedClassIds.clear();
+                    renderClasses();
+                });
+                classBrowserTools.insertBefore(toggleButton, classBrowserTools.querySelector('.class-selection-tools'));
+                const selectionTools = classBrowserTools.querySelector('.class-selection-tools');
+                if (selectionTools) selectionTools.hidden = true;
+            }
+            document.getElementById('classes').classList.toggle('selection-mode', classSelectionMode);
+            const classSelectionToggle = document.getElementById('toggle-class-selection');
+            if (classSelectionToggle) classSelectionToggle.textContent = classSelectionMode ? 'រួចរាល់' : 'កែ';
+            const classSelectionTools = document.querySelector('#classes .class-selection-tools');
+            if (classSelectionTools) classSelectionTools.hidden = !classSelectionMode;
             const query = normalizeComparison(document.getElementById('class-search')?.value);
             store.classes.forEach(item => { item.studentIds = Array.isArray(item.studentIds) ? item.studentIds : []; item.ownerUsername = String(item.ownerUsername || ''); });
             const visibleClasses = store.classes.filter(item => (isAdmin() || item.ownerUsername === currentUsername()) && normalizeComparison(item.name).includes(query));
@@ -1412,10 +1510,12 @@
             const visibleSelected = visibleClasses.filter(item => selectedClassIds.has(item.id)).length;
             const selectAll = document.getElementById('select-all-classes');
             if (selectAll) { selectAll.checked = visibleClasses.length > 0 && visibleSelected === visibleClasses.length; selectAll.indeterminate = visibleSelected > 0 && visibleSelected < visibleClasses.length; }
+            const selectAllClassesLabel = document.querySelector('#classes .class-selection-tools label');
+            if (selectAllClassesLabel) selectAllClassesLabel.lastChild.textContent = ' ជ្រើសរើសទាំងអស់';
             const selectedCount = document.getElementById('selected-class-count');
             if (selectedCount) selectedCount.textContent = `${selectedClassIds.size} បានជ្រើសរើស`;
             const bulkDelete = document.getElementById('bulk-delete-classes');
-            if (bulkDelete) bulkDelete.disabled = selectedClassIds.size === 0;
+            if (bulkDelete) { bulkDelete.disabled = selectedClassIds.size === 0; bulkDelete.textContent = 'លុប'; }
             renderClassDetail();
         };
         const renderDashboardInsights = () => {
@@ -1431,6 +1531,10 @@
             document.getElementById('attendance-insights').innerHTML = attendanceRows.length ? attendanceRows.slice(0, 5).map(item => `<li><div class="insight-row"><span>${esc(item.name)}</span><strong class="insight-value">${item.absent} អវត្តមាន</strong></div><small>កត់ត្រា ${item.total} ដង</small></li>`).join('') : '<li class="insight-empty">មិនទាន់មានទិន្នន័យវត្តមាន</li>';
         };
         function render() {
+            if (!isAdmin()) {
+                studentSelectionMode = false;
+                selectedStudentIds.clear();
+            }
             store.students.forEach(student => { student.gender = normalizeGender(student.gender); });
             const visibleStudents = accessibleStudents();
             const visibleClasses = accessibleClasses();
@@ -1458,9 +1562,13 @@
                 selectedStudentCount.textContent = `${selectedStudentIds.size} នាក់បានជ្រើសរើស`;
                 selectedStudentCount.classList.toggle('has-selection', selectedStudentIds.size > 0);
             }
+            document.getElementById('students').classList.toggle('selection-mode', studentSelectionMode);
+            document.getElementById('toggle-student-selection').textContent = studentSelectionMode ? 'រួចរាល់' : 'កែ';
+            document.querySelector('#students .student-selection-bar').hidden = !studentSelectionMode;
+            document.querySelector('#students thead .student-select-cell').hidden = !studentSelectionMode;
             const bulkDeleteStudents = document.getElementById('bulk-delete-students');
             if (bulkDeleteStudents) bulkDeleteStudents.disabled = selectedStudentIds.size === 0;
-            document.getElementById('student-table').innerHTML = filteredStudents.map(item => `<tr><td class="student-select-cell admin-only"><input class="student-row-select" type="checkbox" data-id="${esc(item.student.id)}" aria-label="ជ្រើសរើស ${esc(item.student.name)}" ${selectedStudentIds.has(item.student.id) ? 'checked' : ''}></td><td>${item.student.photo ? `<img class="student-photo" src="${esc(item.student.photo)}" alt="រូបថតសិស្ស">` : '<span class="avatar">-</span>'}</td><td>${item.index + 1}</td><td>${esc(item.student.name)}</td><td>${esc(item.student.latinName) || '-'}</td><td>${esc(item.student.gender)}</td><td>${esc(item.student.dob) || '-'}</td><td>${esc(item.student.guardianName) || '-'}</td><td><span class="pill">${esc(item.student.status) || 'សកម្ម'}</span></td><td><div class="student-actions"><button class="btn ghost show-student-artboard" data-id="${esc(item.student.id)}">មើលព័ត៌មានលំអិត</button><button class="btn ghost edit-student" data-id="${esc(item.student.id)}">កែប្រែ</button><button class="btn danger delete-student" data-id="${esc(item.student.id)}">លុប</button></div></td></tr>`).join('') || `<tr><td colspan="${isAdmin() ? 10 : 9}" class="empty">មិនទាន់មានទិន្នន័យសិស្ស</td></tr>`;
+            document.getElementById('student-table').innerHTML = filteredStudents.map(item => `<tr><td class="student-select-cell admin-only" ${studentSelectionMode ? '' : 'hidden'}><input class="student-row-select" type="checkbox" data-id="${esc(item.student.id)}" aria-label="ជ្រើសរើស ${esc(item.student.name)}" ${selectedStudentIds.has(item.student.id) ? 'checked' : ''}></td><td>${item.student.photo ? `<img class="student-photo" src="${esc(item.student.photo)}" alt="រូបថតសិស្ស">` : '<span class="avatar">-</span>'}</td><td>${item.index + 1}</td><td>${esc(item.student.name)}</td><td>${esc(item.student.latinName) || '-'}</td><td>${esc(item.student.gender)}</td><td>${esc(item.student.dob) || '-'}</td><td>${esc(item.student.guardianName) || '-'}</td><td><span class="pill">${esc(item.student.status) || 'សកម្ម'}</span></td><td><div class="student-actions"><button class="btn ghost show-student-artboard" data-id="${esc(item.student.id)}">មើលព័ត៌មានលំអិត</button><button class="btn ghost edit-student" data-id="${esc(item.student.id)}">កែប្រែ</button><button class="btn danger delete-student" data-id="${esc(item.student.id)}">លុប</button></div></td></tr>`).join('') || `<tr><td colspan="${isAdmin() ? 10 : 9}" class="empty">មិនទាន់មានទិន្នន័យសិស្ស</td></tr>`;
             document.getElementById('teacher-name').value = settings.teacher;
             document.getElementById('report-month').value = settings.month;
             document.getElementById('school-name').value = settings.school;
@@ -1587,23 +1695,30 @@
             }
         });
         document.getElementById('select-all-classes').addEventListener('change', event => {
+            if (!isAdmin()) { event.target.checked = false; notify('មានតែ Admin ប៉ុណ្ណោះអាចជ្រើសរើសថ្នាក់ដើម្បីលុបបាន។', 'error'); return; }
             const query = normalizeComparison(document.getElementById('class-search').value);
             store.classes.filter(item => (isAdmin() || item.ownerUsername === currentUsername()) && normalizeComparison(item.name).includes(query)).forEach(item => event.target.checked ? selectedClassIds.add(item.id) : selectedClassIds.delete(item.id));
             renderClasses();
         });
-        document.getElementById('bulk-delete-classes').addEventListener('click', () => {
+        document.getElementById('bulk-delete-classes').addEventListener('click', async () => {
             if (!isAdmin()) { notify('មានតែ Admin ប៉ុណ្ណោះអាចលុបថ្នាក់បាន។', 'error'); return; }
             const selected = store.classes.filter(item => selectedClassIds.has(item.id));
-            if (!selected.length || !confirm(`លុបថ្នាក់ ${selected.length} ដែលបានជ្រើសរើសមែនទេ? សិស្សនឹងមិនត្រូវបានលុបទេ។`)) return;
+            if (!selected.length || !await confirmAction({ title: 'លុបថ្នាក់?', message: `លុបថ្នាក់ ${selected.length} ដែលបានជ្រើសរើសមែនទេ? សិស្សនឹងនៅដដែល មិនត្រូវបានលុបទេ។` })) return;
             remember();
             store.classes = store.classes.filter(item => !selectedClassIds.has(item.id));
             selected.forEach(item => selectedClassIds.delete(item.id));
             if (selectedClassId && !store.classes.some(item => item.id === selectedClassId)) selectedClassId = null;
             save();
+            notify(`បានលុបថ្នាក់ ${selected.length} រួចរាល់។`);
         });
         document.getElementById('class-grid').addEventListener('click', event => {
             const checkbox = event.target.closest('.class-select');
-            if (checkbox) { selectedClassIds[checkbox.checked ? 'add' : 'delete'](checkbox.dataset.classId); renderClasses(); return; }
+            if (checkbox) {
+                if (!isAdmin() || !classSelectionMode) { checkbox.checked = false; return; }
+                selectedClassIds[checkbox.checked ? 'add' : 'delete'](checkbox.dataset.classId);
+                renderClasses();
+                return;
+            }
             const folder = event.target.closest('[data-class-id]');
             if (!folder) return;
             selectedClassId = folder.dataset.classId;
@@ -1618,14 +1733,15 @@
             assignStudentToClass(studentId, selected.id);
             save();
         });
-        document.getElementById('delete-class').addEventListener('click', () => {
+        document.getElementById('delete-class').addEventListener('click', async () => {
             if (!isAdmin()) { notify('មានតែ Admin ប៉ុណ្ណោះអាចលុបថ្នាក់បាន។', 'error'); return; }
             const selected = store.classes.find(item => item.id === selectedClassId);
-            if (!selected || !confirm(`លុបថ្នាក់ "${selected.name}" មែនទេ?`)) return;
+            if (!selected || !await confirmAction({ title: 'លុបថ្នាក់?', message: `តើអ្នកចង់លុបថ្នាក់ "${selected.name}" មែនទេ? សិស្សក្នុងថ្នាក់នេះនឹងនៅក្នុងបញ្ជីសិស្សដដែល។` })) return;
             remember();
             store.classes = store.classes.filter(item => item.id !== selectedClassId);
             selectedClassId = null;
             save();
+            notify('បានលុបថ្នាក់រួចរាល់។');
         });
         document.getElementById('class-student-table').addEventListener('click', event => {
             const button = event.target.closest('.remove-class-student');
@@ -1675,6 +1791,12 @@
         document.getElementById('print-student-artboard').addEventListener('click', () => { document.body.classList.add('student-artboard-printing'); window.print(); });
         window.addEventListener('afterprint', () => document.body.classList.remove('student-artboard-printing'));
         document.getElementById('student-search').addEventListener('input', render);
+        document.getElementById('toggle-student-selection').addEventListener('click', () => {
+            if (!isAdmin()) { notify('មានតែ Admin ប៉ុណ្ណោះអាចជ្រើសរើសសិស្សដើម្បីលុបបាន។', 'error'); return; }
+            studentSelectionMode = !studentSelectionMode;
+            if (!studentSelectionMode) selectedStudentIds.clear();
+            render();
+        });
         document.getElementById('select-all-students').addEventListener('change', event => {
             if (!isAdmin()) { notify('មានតែ Admin ប៉ុណ្ណោះអាចជ្រើសរើសសិស្សដើម្បីលុបបាន។', 'error'); return; }
             const query = document.getElementById('student-search').value.toLowerCase();
@@ -1690,21 +1812,21 @@
             else selectedStudentIds.delete(checkbox.dataset.id);
             render();
         });
-        document.getElementById('student-table').addEventListener('click', event => {
+        document.getElementById('student-table').addEventListener('click', async event => {
             const button = event.target.closest('.delete-student');
             if (!button) return;
             event.stopPropagation();
             if (!isAdmin()) { notify('មានតែ Admin ប៉ុណ្ណោះអាចលុបសិស្សបាន។', 'error'); return; }
             const student = store.students.find(item => item.id === button.dataset.id);
-            if (!student || !confirm(`លុបសិស្ស "${student.name}" មែនទេ? ពិន្ទុ និងការចាត់ថ្នាក់របស់សិស្សនេះនឹងត្រូវលុបផងដែរ។`)) return;
+            if (!student || !await confirmAction({ title: 'លុបសិស្ស?', message: `តើអ្នកចង់លុបសិស្ស "${student.name}" មែនទេ? ពិន្ទុ និងទិន្នន័យពាក់ព័ន្ធនឹងត្រូវលុបផងដែរ។` })) return;
             const deleted = removeStudents([student]);
             notify(`បានលុបសិស្ស ${deleted} នាក់រួចរាល់។`);
         });
-        document.getElementById('bulk-delete-students').addEventListener('click', () => {
+        document.getElementById('bulk-delete-students').addEventListener('click', async () => {
             if (!isAdmin()) { notify('មានតែ Admin ប៉ុណ្ណោះអាចលុបសិស្សបាន។', 'error'); return; }
             const selected = store.students.filter(student => selectedStudentIds.has(student.id));
             if (!selected.length) { notify('សូមជ្រើសរើសសិស្សយ៉ាងហោចណាស់ម្នាក់សិន។', 'error'); return; }
-            if (!confirm(`លុបសិស្ស ${selected.length} នាក់ដែលបានជ្រើសរើសមែនទេ? ពិន្ទុ និងការចាត់ថ្នាក់របស់សិស្សទាំងនេះនឹងត្រូវលុបផងដែរ។`)) return;
+            if (!await confirmAction({ title: 'លុបសិស្ស?', message: `តើអ្នកចង់លុបសិស្ស ${selected.length} នាក់ដែលបានជ្រើសរើសមែនទេ? ពិន្ទុ និងទិន្នន័យពាក់ព័ន្ធនឹងត្រូវលុបផងដែរ។` })) return;
             const deleted = removeStudents(selected);
             notify(`បានលុបសិស្ស ${deleted} នាក់រួចរាល់។`);
         });
@@ -2437,7 +2559,7 @@
     document.getElementById('print-report').onclick=()=>window.print();
     document.getElementById('export-backup').onclick=()=>{if(!isAdmin()){notify('មានតែ Admin អាចទាញយក backup បាន។','error');return;} const keys=Object.keys(localStorage).filter(k=>k.startsWith('seyha-')); const payload={version:2,createdAt:new Date().toISOString(),data:Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)]))}; const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`seyha-school-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);};
     document.getElementById('export-backup-xlsx').onclick=()=>{if(!isAdmin()){notify('មានតែ Admin អាចទាញយក backup បាន។','error');return;} if(!window.XLSX){notify('សូមបើក internet ម្តង ដើម្បី load Excel writer។','error');return;} const workbook=XLSX.utils.book_new(); const rows=[['ប្រភេទទិន្នន័យ','ទិន្នន័យ JSON']]; Object.keys(localStorage).filter(k=>k.startsWith('seyha-')).forEach(key=>rows.push([key,localStorage.getItem(key)])); XLSX.utils.book_append_sheet(workbook,XLSX.utils.aoa_to_sheet(rows),'Backup'); const records=(key,fields)=>read(key).map(item=>Object.fromEntries(fields.map(name=>[name,item[name]??'']))); [['សិស្ស','seyha-students',['id','studentId','name','latinName','gender','dob','guardianName','guardianPhone','address','status','enrollmentDate']],['គ្រូ','seyha-teachers',['id','name','latinName','subject','phone','email','status']],['កាលវិភាគ','seyha-schedule',['id','day','time','className','subject','teacher','room']],['ថ្លៃសិក្សា','seyha-fees',['id','student','type','amount','month','status']],['បុគ្គលិក','seyha-staff',['id','name','latinName','role','phone','status']],['ជូនដំណឹង','seyha-announcements',['id','title','date','body']]].forEach(([name,key,fields])=>XLSX.utils.book_append_sheet(workbook,XLSX.utils.json_to_sheet(records(key,fields)),name)); XLSX.writeFile(workbook,`seyha-school-backup-${new Date().toISOString().slice(0,10)}.xlsx`);};
-    document.getElementById('restore-backup').onchange=async e=>{if(!isAdmin()){e.target.value='';notify('មានតែ Admin អាចស្ដារ backup បាន។','error');return;} const file=e.target.files[0];if(!file)return;try{const payload=JSON.parse(await file.text());if(!payload||payload.version!==2||!payload.data||typeof payload.data!=='object')throw new Error('format');if(!confirm('ស្ដារទិន្នន័យនេះ? ទិន្នន័យបច្ចុប្បន្ននឹងត្រូវជំនួស។'))return;Object.entries(payload.data).forEach(([k,v])=>{if(k.startsWith('seyha-')&&typeof v==='string')localStorage.setItem(k,v);});location.reload();}catch{notify('ឯកសារ backup មិនត្រឹមត្រូវ។','error');}finally{e.target.value='';}};
+    document.getElementById('restore-backup').onchange=async e=>{if(!isAdmin()){e.target.value='';notify('មានតែ Admin អាចស្ដារ backup បាន។','error');return;} const file=e.target.files[0];if(!file)return;try{const payload=JSON.parse(await file.text());if(!payload||payload.version!==2||!payload.data||typeof payload.data!=='object')throw new Error('format');if(!await confirmAction({title:'ស្ដារទិន្នន័យ?',message:'ទិន្នន័យបច្ចុប្បន្ននឹងត្រូវជំនួសដោយទិន្នន័យក្នុង backup។',confirmLabel:'ស្ដារ',danger:false}))return;Object.entries(payload.data).forEach(([k,v])=>{if(k.startsWith('seyha-')&&typeof v==='string')localStorage.setItem(k,v);});location.reload();}catch{notify('ឯកសារ backup មិនត្រឹមត្រូវ។','error');}finally{e.target.value='';}};
     renderReports();
     const studentForm=document.getElementById('student-form'); document.addEventListener('click',e=>{if(!e.target.classList.contains('edit-student'))return;const s=store.students.find(x=>x.id===e.target.dataset.id);if(!s)return;['studentId','guardianName','guardianPhone','address','status','enrollmentDate'].forEach(k=>{if(studentForm.elements[k])studentForm.elements[k].value=s[k]||'';});});
 })();
