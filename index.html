@@ -382,6 +382,14 @@
         .class-selection-tools { display: flex; align-items: center; gap: 12px; }
         .class-selection-tools label { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; cursor: pointer; }
         .class-selection-tools input, .class-select { width: 17px; height: 17px; accent-color: var(--cyan); }
+        .student-selection-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 0 0 14px; padding: 12px 14px; border: 1px solid rgba(103,216,232,.2); border-radius: 12px; background: linear-gradient(110deg, rgba(103,216,232,.07), rgba(145,169,255,.06)); }
+        .student-selection-bar label { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 13px; cursor: pointer; }
+        .student-selection-bar input, .student-row-select { width: 17px; height: 17px; accent-color: var(--cyan); cursor: pointer; }
+        .student-selection-count { flex: 1; color: var(--muted); font-size: 12px; }
+        .student-selection-count.has-selection { color: var(--cyan); font-weight: 600; }
+        .bulk-delete-students:disabled { cursor: not-allowed; opacity: .45; }
+        .student-select-cell { width: 42px; text-align: center; }
+        @media (max-width: 680px) { .student-selection-bar { align-items: flex-start; } .student-selection-count { flex-basis: 100%; order: 1; } .student-selection-bar .btn { width: 100%; } }
         .class-folder { position: relative; }
         .class-folder .class-select { position: absolute; top: 16px; right: 16px; margin: 0; }
         .class-open { display: block; width: 100%; min-height: 110px; padding: 0; color: inherit; border: 0; background: transparent; text-align: left; }
@@ -962,7 +970,7 @@
                 <div class="layout"><div class="panel"><div class="panel-head"><div><h2>សិស្សថ្មីៗ</h2><small>បញ្ជីសិស្សដែលបានបញ្ចូលចុងក្រោយ</small></div><button class="btn ghost" data-go="students">មើលទាំងអស់</button></div><div class="table-wrap"><table><thead><tr><th>រូបថត</th><th>លេខរៀង</th><th>ឈ្មោះខ្មែរ</th><th>ឈ្មោះឡាតាំង</th><th>ភេទ</th><th>ថ្ងៃខែឆ្នាំកំណើត</th></tr></thead><tbody id="recent-students"></tbody></table></div></div></div>
             </section>
 
-            <section class="view" id="students"><div class="panel"><div class="panel-head"><div><h2>បញ្ជីសិស្ស</h2><small>បញ្ចូល និងរក្សាទុកព័ត៌មានសិស្ស</small></div><div class="header-actions"><button class="btn ghost admin-only" id="import-students">នាំចូល Excel</button><input id="student-file" type="file" accept=".xlsx,.xls,.csv" multiple hidden><button class="btn" id="show-student-form">+ បញ្ចូលសិស្ស</button></div></div><form id="student-form" hidden><div class="form-grid"><label>ឈ្មោះសិស្ស (ខ្មែរ)<input name="name" required placeholder="ឧ. សុខ សុវណ្ណ"></label><label>ឈ្មោះសិស្ស (ឡាតាំង)<input name="latinName" placeholder="ឧ. Sok Sovann"></label><label>លេខសម្គាល់សិស្ស<input name="studentId" placeholder="ឧ. ST-2026-001"></label><label>ភេទ<select name="gender"><option value="ប">ប</option><option value="ស">ស</option></select></label><label>ថ្ងៃខែឆ្នាំកំណើត<input name="dob" placeholder="ឧ. 15/03/2012" inputmode="numeric"></label><label>ឈ្មោះអាណាព្យាបាល<input name="guardianName" placeholder="ឈ្មោះមាតាបិតា"></label><label>ទូរស័ព្ទអាណាព្យាបាល<input name="guardianPhone" type="tel" placeholder="012 345 678"></label><label>អាសយដ្ឋាន<input name="address" placeholder="ភូមិ ឃុំ ស្រុក"></label><label>ស្ថានភាព<select name="status"><option value="សកម្ម">សកម្ម</option><option value="ផ្អាក">ផ្អាក</option><option value="បានបញ្ចប់">បានបញ្ចប់</option></select></label><label>ថ្ងៃចុះឈ្មោះ<input name="enrollmentDate" type="date"></label><label>រូបថតសិស្ស<input id="student-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp"><img id="student-photo-preview" class="student-photo" alt="រូបថតសិស្ស" hidden></label></div><div class="form-actions"><button type="button" class="btn ghost" id="cancel-student">បោះបង់</button><button class="btn" type="submit">រក្សាទុក</button></div></form><div class="toolbar"><input id="student-search" placeholder="ស្វែងរកឈ្មោះខ្មែរ ឬឈ្មោះឡាតាំង..." aria-label="ស្វែងរកសិស្ស"><small id="student-total" class="sub"></small></div><div class="table-wrap"><table><thead><tr><th>រូបថត</th><th>លេខរៀង</th>            <th>ឈ្មោះខ្មែរ</th><th>ឈ្មោះឡាតាំង</th><th>ភេទ</th><th>ថ្ងៃខែឆ្នាំកំណើត</th><th>អាណាព្យាបាល</th><th>ស្ថានភាព</th><th></th></tr></thead><tbody id="student-table"></tbody></table></div></div></section>
+            <section class="view" id="students"><div class="panel"><div class="panel-head"><div><h2>បញ្ជីសិស្ស</h2><small>បញ្ចូល និងរក្សាទុកព័ត៌មានសិស្ស</small></div><div class="header-actions"><button class="btn ghost admin-only" id="import-students">នាំចូល Excel</button><input id="student-file" type="file" accept=".xlsx,.xls,.csv" multiple hidden><button class="btn" id="show-student-form">+ បញ្ចូលសិស្ស</button></div></div><form id="student-form" hidden><div class="form-grid"><label>ឈ្មោះសិស្ស (ខ្មែរ)<input name="name" required placeholder="ឧ. សុខ សុវណ្ណ"></label><label>ឈ្មោះសិស្ស (ឡាតាំង)<input name="latinName" placeholder="ឧ. Sok Sovann"></label><label>លេខសម្គាល់សិស្ស<input name="studentId" placeholder="ឧ. ST-2026-001"></label><label>ភេទ<select name="gender"><option value="ប">ប</option><option value="ស">ស</option></select></label><label>ថ្ងៃខែឆ្នាំកំណើត<input name="dob" placeholder="ឧ. 15/03/2012" inputmode="numeric"></label><label>ឈ្មោះអាណាព្យាបាល<input name="guardianName" placeholder="ឈ្មោះមាតាបិតា"></label><label>ទូរស័ព្ទអាណាព្យាបាល<input name="guardianPhone" type="tel" placeholder="012 345 678"></label><label>អាសយដ្ឋាន<input name="address" placeholder="ភូមិ ឃុំ ស្រុក"></label><label>ស្ថានភាព<select name="status"><option value="សកម្ម">សកម្ម</option><option value="ផ្អាក">ផ្អាក</option><option value="បានបញ្ចប់">បានបញ្ចប់</option></select></label><label>ថ្ងៃចុះឈ្មោះ<input name="enrollmentDate" type="date"></label><label>រូបថតសិស្ស<input id="student-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp"><img id="student-photo-preview" class="student-photo" alt="រូបថតសិស្ស" hidden></label></div><div class="form-actions"><button type="button" class="btn ghost" id="cancel-student">បោះបង់</button><button class="btn" type="submit">រក្សាទុក</button></div></form><div class="toolbar"><input id="student-search" placeholder="ស្វែងរកឈ្មោះខ្មែរ ឬឈ្មោះឡាតាំង..." aria-label="ស្វែងរកសិស្ស"><small id="student-total" class="sub"></small></div><div class="student-selection-bar admin-only"><label><input id="select-all-students" type="checkbox"> ជ្រើសរើសសិស្សដែលបង្ហាញ</label><span class="student-selection-count" id="selected-student-count" aria-live="polite">0 នាក់បានជ្រើសរើស</span><button class="btn danger bulk-delete-students" id="bulk-delete-students" type="button" disabled>លុបសិស្សដែលបានជ្រើសរើស</button></div><div class="table-wrap"><table><thead><tr><th class="student-select-cell admin-only">ជ្រើស</th><th>រូបថត</th><th>លេខរៀង</th><th>ឈ្មោះខ្មែរ</th><th>ឈ្មោះឡាតាំង</th><th>ភេទ</th><th>ថ្ងៃខែឆ្នាំកំណើត</th><th>អាណាព្យាបាល</th><th>ស្ថានភាព</th><th></th></tr></thead><tbody id="student-table"></tbody></table></div></div></section>
 
             <section class="view" id="grades"><div class="panel"><div class="panel-head"><div><h2>តារាងពិន្ទុសិស្ស</h2><small>បន្ថែមសិស្សបានមិនកំណត់ និងកែឈ្មោះផ្ទាល់ក្នុងតារាងដូច Excel</small></div><div class="print-hide"><button class="btn" id="add-grade-student">+ បន្ថែមសិស្ស/ជួរ</button><button class="btn ghost admin-only" id="import-grade-template">យកទិន្នន័យពី Excel</button><input id="grade-template-file" type="file" accept=".xlsx,.xls,.csv" hidden><button class="btn ghost admin-only" id="export-grades">ទាញយក Excel</button><button class="btn" id="print-grades">Print</button></div></div><div class="grade-settings print-hide"><h3>កំណត់តារាងដោយខ្លួនឯង</h3><label>ឈ្មោះសាលា<input id="school-name" placeholder="ឧ. Rigen International School"></label><label>គ្រូបន្ទុកថ្នាក់<input id="teacher-name" placeholder="ឧ. លោកគ្រូ សុខា"></label><label>ខែ/រយៈពេលចេញតារាង<input id="report-month" placeholder="ឧ. មិថុនា ២០២៦"></label><label>Font<select id="report-font"><option value="Kantumruy Pro">Kantumruy Pro</option><option value="Arial">Arial</option><option value="Tahoma">Tahoma</option><option value="Khmer OS Battambang">Khmer OS Battambang</option><option value="Noto Sans Khmer">Noto Sans Khmer</option></select></label><label class="logo-picker">Logo<input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp"><img id="logo-preview" class="logo-preview" alt="Logo preview"></label></div><div class="print-meta"><img id="report-logo" class="report-logo" alt="School logo"><h1 id="print-school">Seyha School</h1><p>តារាងពិន្ទុសិស្ស · <span id="print-month"></span></p><p>គ្រូបន្ទុកថ្នាក់៖ <span id="print-teacher"></span></p></div><div class="sheet-tools print-hide"><span class="sheet-mark">Spreadsheet</span><input class="formula-bar" id="formula-bar" readonly placeholder="ជ្រើសរើស cell មួយ ដើម្បីមើលតម្លៃ"></div><div class="sheet-scroll"><table class="grade-table"><thead><tr><th>ល.រ</th><th>ឈ្មោះសិស្ស</th><th>ភេទ</th><th>វត្តមាន</th><th>កិច្ចការផ្ទះ</th><th>កិច្ចការសាលា</th><th>សរសេរតាមអាន</th><th>ភាសាអង់គ្លេស</th><th>ភាសាខ្មែរ</th><th>គណិតវិទ្យា</th><th>ភាសាចិន</th><th>ពិន្ទុសរុប</th><th>ចំណាត់ថ្នាក់</th><th>និទ្ទេស</th></tr></thead><tbody id="grade-table"></tbody></table></div><div class="notice print-hide">ពិន្ទុទទេមិនត្រូវបានរាប់ក្នុងពិន្ទុសរុប និងនឹងនៅទទេពេល Print។ ចំណាត់ថ្នាក់ជាលេខ 1, 2, 3 តាមពិន្ទុសរុប; និទ្ទេស៖ 90–100 A · 86–89 B+ · 80–85 B · 76–79 C+ · 70–75 C · 50–69 D · ក្រោម 50 F។ បើគ្មានសិស្សណាមានពិន្ទុសរុបដល់ 90 សិស្សលេខ 1 នឹងទទួល A។</div></div></section>
 
@@ -1330,6 +1338,23 @@
         const renderAttendanceEntry = () => { const dateInput = document.getElementById('attendance-date'); if (!dateInput) return; if (!dateInput.value) dateInput.value = today(); renderAttendanceClasses(); const date = dateInput.value; const students=attendanceStudents(); document.getElementById('attendance-entry-table').innerHTML = students.map((student, index) => `<tr><td>${index + 1}</td><td>${student.photo ? `<img class="student-photo" src="${esc(student.photo)}" alt="រូបថតសិស្ស">` : ''}${esc(student.name)}</td><td>${esc(student.latinName) || '-'}</td><td>${esc(student.gender)}</td><td><select class="attendance-status" data-id="${student.id}"><option ${attendanceStatus(student.id, date) === 'មក' ? 'selected' : ''}>មក</option><option ${attendanceStatus(student.id, date) === 'អវត្តមាន' ? 'selected' : ''}>អវត្តមាន</option><option ${attendanceStatus(student.id, date) === 'យឺត' ? 'selected' : ''}>យឺត</option><option ${attendanceStatus(student.id, date) === 'ច្បាប់' ? 'selected' : ''}>ច្បាប់</option></select></td></tr>`).join('') || `<tr><td colspan="5" class="empty">${selectedAttendanceClassId==='all'?'សូមបញ្ចូលសិស្សជាមុនសិន':'ថ្នាក់នេះមិនទាន់មានសិស្សទេ'}</td></tr>`; };
         let selectedClassId = null;
         const selectedClassIds = new Set();
+        const selectedStudentIds = new Set();
+        const removeStudents = students => {
+            const ids = new Set(students.map(student => student.id));
+            if (!ids.size) return 0;
+            remember();
+            store.students = store.students.filter(student => !ids.has(student.id));
+            ids.forEach(id => {
+                delete store.grades[id];
+                selectedStudentIds.delete(id);
+            });
+            store.attendance = store.attendance.filter(item => !ids.has(item.studentId));
+            store.classes.forEach(item => {
+                item.studentIds = (Array.isArray(item.studentIds) ? item.studentIds : []).filter(id => !ids.has(id));
+            });
+            save();
+            return ids.size;
+        };
         const ensureClassStudentForm = () => {
             const toolbar = document.querySelector('#class-detail .toolbar');
             if (!toolbar || document.getElementById('show-class-student-form')) return;
@@ -1418,7 +1443,24 @@
             document.getElementById('recent-students').innerHTML = rows.slice(0, 5).map((student, index) => `<tr><td>${student.photo ? `<img class="student-photo" src="${esc(student.photo)}" alt="រូបថតសិស្ស">` : '<span class="avatar">-</span>'}</td><td>${visibleStudents.length - index}</td><td>${esc(student.name)}</td><td>${esc(student.latinName) || '-'}</td><td>${esc(student.gender)}</td><td>${esc(student.dob) || '-'}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">មិនទាន់មានទិន្នន័យសិស្ស</td></tr>';
             document.getElementById('student-total').textContent = `${visibleStudents.length} នាក់`;
             const query = (document.getElementById('student-search')?.value || '').toLowerCase();
-            document.getElementById('student-table').innerHTML = visibleStudents.map((student, index) => ({ student, index })).filter(item => `${item.student.name} ${item.student.latinName || ''}`.toLowerCase().includes(query)).map(item => `<tr><td>${item.student.photo ? `<img class="student-photo" src="${esc(item.student.photo)}" alt="រូបថតសិស្ស">` : '<span class="avatar">-</span>'}</td><td>${item.index + 1}</td><td>${esc(item.student.name)}</td><td>${esc(item.student.latinName) || '-'}</td><td>${esc(item.student.gender)}</td><td>${esc(item.student.dob) || '-'}</td><td><div class="student-actions"><button class="btn ghost show-student-artboard" data-id="${item.student.id}">មើលព័ត៌មានលំអិត</button><button class="btn ghost edit-student" data-id="${item.student.id}">កែប្រែ</button><button class="btn danger delete-student" data-id="${item.student.id}">លុប</button></div></td></tr>`).join('') || '<tr><td colspan="7" class="empty">មិនទាន់មានទិន្នន័យសិស្ស</td></tr>';
+            const filteredStudents = visibleStudents.map((student, index) => ({ student, index })).filter(item => `${item.student.name} ${item.student.latinName || ''}`.toLowerCase().includes(query));
+            const visibleStudentIds = new Set(visibleStudents.map(student => student.id));
+            selectedStudentIds.forEach(id => { if (!visibleStudentIds.has(id)) selectedStudentIds.delete(id); });
+            const selectedVisibleCount = filteredStudents.filter(item => selectedStudentIds.has(item.student.id)).length;
+            const selectAllStudents = document.getElementById('select-all-students');
+            if (selectAllStudents) {
+                selectAllStudents.checked = filteredStudents.length > 0 && selectedVisibleCount === filteredStudents.length;
+                selectAllStudents.indeterminate = selectedVisibleCount > 0 && selectedVisibleCount < filteredStudents.length;
+                selectAllStudents.disabled = filteredStudents.length === 0;
+            }
+            const selectedStudentCount = document.getElementById('selected-student-count');
+            if (selectedStudentCount) {
+                selectedStudentCount.textContent = `${selectedStudentIds.size} នាក់បានជ្រើសរើស`;
+                selectedStudentCount.classList.toggle('has-selection', selectedStudentIds.size > 0);
+            }
+            const bulkDeleteStudents = document.getElementById('bulk-delete-students');
+            if (bulkDeleteStudents) bulkDeleteStudents.disabled = selectedStudentIds.size === 0;
+            document.getElementById('student-table').innerHTML = filteredStudents.map(item => `<tr><td class="student-select-cell admin-only"><input class="student-row-select" type="checkbox" data-id="${esc(item.student.id)}" aria-label="ជ្រើសរើស ${esc(item.student.name)}" ${selectedStudentIds.has(item.student.id) ? 'checked' : ''}></td><td>${item.student.photo ? `<img class="student-photo" src="${esc(item.student.photo)}" alt="រូបថតសិស្ស">` : '<span class="avatar">-</span>'}</td><td>${item.index + 1}</td><td>${esc(item.student.name)}</td><td>${esc(item.student.latinName) || '-'}</td><td>${esc(item.student.gender)}</td><td>${esc(item.student.dob) || '-'}</td><td>${esc(item.student.guardianName) || '-'}</td><td><span class="pill">${esc(item.student.status) || 'សកម្ម'}</span></td><td><div class="student-actions"><button class="btn ghost show-student-artboard" data-id="${esc(item.student.id)}">មើលព័ត៌មានលំអិត</button><button class="btn ghost edit-student" data-id="${esc(item.student.id)}">កែប្រែ</button><button class="btn danger delete-student" data-id="${esc(item.student.id)}">លុប</button></div></td></tr>`).join('') || `<tr><td colspan="${isAdmin() ? 10 : 9}" class="empty">មិនទាន់មានទិន្នន័យសិស្ស</td></tr>`;
             document.getElementById('teacher-name').value = settings.teacher;
             document.getElementById('report-month').value = settings.month;
             document.getElementById('school-name').value = settings.school;
@@ -1633,6 +1675,39 @@
         document.getElementById('print-student-artboard').addEventListener('click', () => { document.body.classList.add('student-artboard-printing'); window.print(); });
         window.addEventListener('afterprint', () => document.body.classList.remove('student-artboard-printing'));
         document.getElementById('student-search').addEventListener('input', render);
+        document.getElementById('select-all-students').addEventListener('change', event => {
+            if (!isAdmin()) { notify('មានតែ Admin ប៉ុណ្ណោះអាចជ្រើសរើសសិស្សដើម្បីលុបបាន។', 'error'); return; }
+            const query = document.getElementById('student-search').value.toLowerCase();
+            const matchingStudents = accessibleStudents().filter(student => `${student.name} ${student.latinName || ''}`.toLowerCase().includes(query));
+            matchingStudents.forEach(student => event.target.checked ? selectedStudentIds.add(student.id) : selectedStudentIds.delete(student.id));
+            render();
+        });
+        document.getElementById('student-table').addEventListener('change', event => {
+            const checkbox = event.target.closest('.student-row-select');
+            if (!checkbox) return;
+            if (!isAdmin()) { checkbox.checked = false; notify('មានតែ Admin ប៉ុណ្ណោះអាចជ្រើសរើសសិស្សដើម្បីលុបបាន។', 'error'); return; }
+            if (checkbox.checked) selectedStudentIds.add(checkbox.dataset.id);
+            else selectedStudentIds.delete(checkbox.dataset.id);
+            render();
+        });
+        document.getElementById('student-table').addEventListener('click', event => {
+            const button = event.target.closest('.delete-student');
+            if (!button) return;
+            event.stopPropagation();
+            if (!isAdmin()) { notify('មានតែ Admin ប៉ុណ្ណោះអាចលុបសិស្សបាន។', 'error'); return; }
+            const student = store.students.find(item => item.id === button.dataset.id);
+            if (!student || !confirm(`លុបសិស្ស "${student.name}" មែនទេ? ពិន្ទុ និងការចាត់ថ្នាក់របស់សិស្សនេះនឹងត្រូវលុបផងដែរ។`)) return;
+            const deleted = removeStudents([student]);
+            notify(`បានលុបសិស្ស ${deleted} នាក់រួចរាល់។`);
+        });
+        document.getElementById('bulk-delete-students').addEventListener('click', () => {
+            if (!isAdmin()) { notify('មានតែ Admin ប៉ុណ្ណោះអាចលុបសិស្សបាន។', 'error'); return; }
+            const selected = store.students.filter(student => selectedStudentIds.has(student.id));
+            if (!selected.length) { notify('សូមជ្រើសរើសសិស្សយ៉ាងហោចណាស់ម្នាក់សិន។', 'error'); return; }
+            if (!confirm(`លុបសិស្ស ${selected.length} នាក់ដែលបានជ្រើសរើសមែនទេ? ពិន្ទុ និងការចាត់ថ្នាក់របស់សិស្សទាំងនេះនឹងត្រូវលុបផងដែរ។`)) return;
+            const deleted = removeStudents(selected);
+            notify(`បានលុបសិស្ស ${deleted} នាក់រួចរាល់។`);
+        });
         document.getElementById('class-search').addEventListener('input', renderClasses);
         document.getElementById('import-students').addEventListener('click', () => { if (!isAdmin()) { notify('មានតែ Admin ប៉ុណ្ណោះអាចនាំចូលសិស្សបាន។', 'error'); return; } document.getElementById('student-file').click(); });
         document.getElementById('student-file').addEventListener('change', async event => {
