@@ -306,6 +306,34 @@
             border-color: rgba(103,216,232,.7);
             box-shadow: 0 0 0 3px rgba(103,216,232,.11), 0 0 18px rgba(103,216,232,.18);
         }
+        input[type="checkbox"],
+        .panel input[type="checkbox"],
+        .permission-account input[type="checkbox"] {
+            display: inline-grid !important;
+            width: 18px !important;
+            min-width: 18px !important;
+            max-width: 18px !important;
+            height: 18px !important;
+            min-height: 18px !important;
+            max-height: 18px !important;
+            flex: 0 0 18px !important;
+            padding: 0 !important;
+            border-radius: 5px !important;
+            box-shadow: none !important;
+            vertical-align: middle;
+        }
+        input[type="checkbox"]:hover,
+        input[type="checkbox"]:focus,
+        input[type="checkbox"]:focus-visible {
+            border-color: rgba(154,170,193,.72);
+            box-shadow: none !important;
+        }
+        input[type="checkbox"]:checked:hover,
+        input[type="checkbox"]:checked:focus,
+        input[type="checkbox"]:indeterminate:hover,
+        input[type="checkbox"]:indeterminate:focus {
+            border-color: var(--cyan);
+        }
         @keyframes rgbBoxPulse {
             0%, 100% { border-color: rgba(103,216,232,.22); box-shadow: 0 0 0 1px rgba(103,216,232,.04), 0 0 16px rgba(103,216,232,.07), var(--shadow); }
             33% { border-color: rgba(145,169,255,.5); box-shadow: 0 0 0 1px rgba(145,169,255,.1), 0 0 24px rgba(145,169,255,.15), var(--shadow); }
